@@ -29,6 +29,7 @@
 #include <algorithm>
 
 #include "neural/writer.h"
+#include "utils/epdqueue.h"
 
 namespace lczero {
 
@@ -47,13 +48,23 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
                            bool shared_tree)
     : options_{player1, player2} {
   tree_[0] = std::make_shared<NodeTree>();
-  tree_[0]->ResetToPosition(ChessBoard::kStartingFen, {});
+
+  std::string epd = epdqueue::Pop();
+  if (epd == "") {
+    // out of epd's
+    abort_ = true;
+    return;
+  } else {
+    epd.append(" 0 1");
+  }
+
+  tree_[0]->ResetToPosition(epd, {});
 
   if (shared_tree) {
     tree_[1] = tree_[0];
   } else {
     tree_[1] = std::make_shared<NodeTree>();
-    tree_[1]->ResetToPosition(ChessBoard::kStartingFen, {});
+    tree_[1]->ResetToPosition(epd, {});
   }
 }
 

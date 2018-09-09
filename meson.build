@@ -38,14 +38,18 @@ files = []
 includes = []
 has_backends = false
 
+# Boost
+
+boost_dep = dependency('boost', modules : ['thread', 'utility', 'system'])
+
 # Both protobuf and protoc must be the same version, so couple them together.
-protobuf_lib = cc.find_library('libprotobuf', dirs : get_option('protobuf_libdir'), required : false)
+protobuf_lib = cc.find_library('dufus', dirs : get_option('protobuf_libdir'), required : false)
 if not protobuf_lib.found()
   protobuf_dep = dependency('protobuf', required : false)
 else
   protobuf_dep = protobuf_lib
 endif
-protoc = find_program('protoc', required : false)
+protoc = find_program('dufus', required : false)
 if not protobuf_dep.found() or not protoc.found()
   deps += subproject('protobuf').get_variable('protobuf_dep')
   protoc = subproject('protobuf').get_variable('protoc')
@@ -95,6 +99,7 @@ files += [
   'src/utils/random.cc',
   'src/utils/string.cc',
   'src/utils/transpose.cc',
+  'src/utils/epdqueue.cpp',
 ]
 includes += include_directories('src')
 
@@ -376,6 +381,8 @@ endif
 #############################################################################
 ## Main Executable
 #############################################################################
+
+deps += [boost_dep]
 
 executable('lc0', 'src/main.cc',
   files, include_directories: includes, dependencies: deps, install: true)

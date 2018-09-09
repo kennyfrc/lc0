@@ -29,6 +29,7 @@
 #include "engine.h"
 #include "selfplay/loop.h"
 #include "utils/commandline.h"
+#include "utils/epdqueue.h"
 #include "version.h"
 
 int main(int argc, const char** argv) {
@@ -43,6 +44,10 @@ int main(int argc, const char** argv) {
 
   if (CommandLine::ConsumeCommand("selfplay")) {
     // Selfplay mode.
+    // load the epd's for starting positions
+
+    epdqueue::FillQ();
+    // start playing with yourself
     SelfPlayLoop loop;
     loop.RunLoop();
   } else {
