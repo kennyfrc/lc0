@@ -45,9 +45,9 @@ Given those basics, the OS and backend specific instructions are below.
 #### Generic
 
 1. Install backend:
-    - (if you want version with tensorflow) Install `tensorflow_cc` by following steps described [here](https://github.com/FloopCZ/tensorflow_cc).
-    - (if you want cuDNN version) Install [CUDA](https://developer.nvidia.com/cuda-zone) and [cuDNN](https://developer.nvidia.com/cudnn).
-    - (if you want OpenBLAS version) Install OpenBLAS (`libopenblas-dev`).
+    - If you want to use NVidia graphics cards Install [CUDA](https://developer.nvidia.com/cuda-zone) and [cuDNN](https://developer.nvidia.com/cudnn).
+    - If you want to use AMD graphics cards install OpenCL.
+    - if you want OpenBLAS version Install OpenBLAS (`libopenblas-dev`).
 2. Install ninja build (`ninja-build`), meson, and (optionally) gtest (`libgtest-dev`).
 3. Go to `lc0/`
 4. Run `./build.sh`
@@ -105,6 +105,48 @@ Or.
 4. Install ninja: `brew install ninja`
 6. Run `./build.sh`
 7. The resulting binary will be in build/release
+
+### Raspberry Pi
+
+1. Install OpenBLAS
+
+```
+git clone https://github.com/xianyi/OpenBLAS.git
+cd OpenBLAS/
+make
+sudo make PREFIX=/usr install
+cd ..
+```
+
+2. Install Meson
+
+```
+pip3 install meson
+```
+
+3. Install clang
+
+```
+wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-armv7a-linux-gnueabihf.tar.xz
+tar -xf clang+llvm-6.0.0-armv7a-linux-gnueabihf.tar.xz
+rm clang+llvm-6.0.0-armv7a-linux-gnueabihf.tar.xz
+mv clang+llvm-6.0.0-armv7a-linux-gnueabihf clang_6.0.0
+sudo mv clang_6.0.0 /usr/local
+echo 'export PATH=/usr/local/clang_6.0.0/bin:~/.local/bin:$PATH' >> .bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/clang_6.0.0/lib:$LD_LIBRARY_PATH' >> .bashrc
+source .bashrc
+```
+
+4. Clone lc0 and compile
+
+```
+git clone https://github.com/LeelaChessZero/lc0.git
+cd lc0
+git submodule update --init --recursive
+CC=clang CXX=clang++ ./build.sh -Ddefault_library=static
+```
+
+5. The resulting binary will be in build/release
 
 ## License
 

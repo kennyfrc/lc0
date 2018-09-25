@@ -70,9 +70,6 @@ class Search {
   // Starts search with k threads and wait until it finishes.
   void RunBlocking(size_t threads);
 
-  // Runs search single-threaded, blocking.
-  void RunSingleThreaded();
-
   // Stops search. At the end bestmove will be returned. The function is not
   // blocking, so it returns before search is actually done.
   void Stop();
@@ -80,6 +77,9 @@ class Search {
   void Abort();
   // Blocks until all worker thread finish.
   void Wait();
+  // Returns whether search is active. Workers check that to see whether another
+  // search iteration is needed.
+  bool IsSearchActive() const;
 
   // Returns best move, from the point of view of white player. And also ponder.
   // May or may not use temperature, according to the settings.
@@ -97,6 +97,7 @@ class Search {
   static const char* kCpuctStr;
   static const char* kTemperatureStr;
   static const char* kTempDecayMovesStr;
+  static const char* kTemperatureVisitOffsetStr;
   static const char* kNoiseStr;
   static const char* kVerboseStatsStr;
   static const char* kAggressiveTimePruningStr;
@@ -105,7 +106,7 @@ class Search {
   static const char* kPolicySoftmaxTempStr;
   static const char* kAllowedNodeCollisionsStr;
   static const char* kOutOfOrderEvalStr;
-  static const char* kStickyCheckmateStr;
+  static const char* kMultiPvStr;
 
  private:
   // Returns the best move, maybe with temperature (according to the settings).
@@ -115,6 +116,8 @@ class Search {
   // NoTemperature is safe to use on non-extended nodes, while WithTemperature
   // accepts only nodes with at least 1 visited child.
   EdgeAndNode GetBestChildNoTemperature(Node* parent) const;
+  std::vector<EdgeAndNode> GetBestChildrenNoTemperature(Node* parent,
+                                                        int count) const;
   EdgeAndNode GetBestChildWithTemperature(Node* parent,
                                           float temperature) const;
 
@@ -123,8 +126,17 @@ class Search {
   void MaybeTriggerStop();
   void MaybeOutputInfo();
   void SendUciInfo();  // Requires nodes_mutex_ to be held.
+  // Sets stop to true and notifies watchdog thread.
+  void FireStopInternal();
 
   void SendMovesStats() const;
+  // Function which runs in a separate thread and watches for time and
+  // uci `stop` command;
+  void WatchdogThread();
+
+  // Populates the given list with allowed root moves.
+  // Returns true if the population came from tablebase.
+  bool PopulateRootMoveLimit(MoveList* root_moves) const;
 
   // We only need first ply for debug output, but could be easily generalized.
   NNCacheLock GetCachedFirstPlyResult(EdgeAndNode) const;
@@ -132,6 +144,8 @@ class Search {
   mutable Mutex counters_mutex_ ACQUIRED_AFTER(nodes_mutex_);
   // Tells all threads to stop.
   bool stop_ GUARDED_BY(counters_mutex_) = false;
+  // Condition variable used to watch stop_ variable.
+  std::condition_variable watchdog_cv_;
   // There is already one thread that responded bestmove, other threads
   // should not do that.
   bool responded_bestmove_ GUARDED_BY(counters_mutex_) = false;
@@ -158,7 +172,7 @@ class Search {
   mutable SharedMutex nodes_mutex_;
   EdgeAndNode best_move_edge_ GUARDED_BY(nodes_mutex_);
   Edge* last_outputted_best_move_edge_ GUARDED_BY(nodes_mutex_) = nullptr;
-  ThinkingInfo uci_info_ GUARDED_BY(nodes_mutex_);
+  ThinkingInfo last_outputted_uci_info_ GUARDED_BY(nodes_mutex_);
   int64_t total_playouts_ GUARDED_BY(nodes_mutex_) = 0;
   int remaining_playouts_ GUARDED_BY(nodes_mutex_) =
       std::numeric_limits<int>::max();
@@ -175,6 +189,7 @@ class Search {
   const int kMaxPrefetchBatch;
   const float kCpuct;
   const float kTemperature;
+  const float kTemperatureVisitOffset;
   const int kTempDecayMoves;
   const bool kNoise;
   const bool kVerboseStats;
@@ -184,7 +199,7 @@ class Search {
   const float kPolicySoftmaxTemp;
   const int kAllowedNodeCollisions;
   const bool kOutOfOrderEval;
-  const bool kStickyCheckmate;
+  const int kMultiPv;
 
   friend class SearchWorker;
 };
@@ -199,7 +214,7 @@ class SearchWorker {
 
   // Runs iterations while needed.
   void RunBlocking() {
-    while (IsSearchActive()) {
+    while (search_->IsSearchActive()) {
       ExecuteOneIteration();
     }
   }
@@ -213,9 +228,6 @@ class SearchWorker {
   // 6. Propagate the new nodes' information to all their parents in the tree.
   // 7. Update the Search's status and progress information.
   void ExecuteOneIteration();
-
-  // Returns whether another search iteration is needed (false means exit).
-  bool IsSearchActive() const;
 
   // The same operations one by one:
   // 1. Initialize internal structures.
@@ -267,6 +279,8 @@ class SearchWorker {
   std::unique_ptr<CachingComputation> computation_;
   // History is reset and extended by PickNodeToExtend().
   PositionHistory history_;
+  MoveList root_move_filter_;
+  bool root_move_filter_populated_ = false;
 };
 
 }  // namespace lczero
