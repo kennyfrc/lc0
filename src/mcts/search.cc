@@ -772,7 +772,7 @@ namespace lczero {
                     : -node->GetQ() -
                       search_->kFpuReduction * std::sqrt(node->GetVisitedPolicy());
 
-            if (is_root_node && search_->kRandomRoot && (Random::Get().GetFloat(1.0) < 0.1)) {
+            if (is_root_node && search_->kRandomRoot && (node->GetN() > 20000) && (Random::Get().GetFloat(1.0) < 0.1)) {
                 random_edge = true;
             } else {
                 random_edge = false;
