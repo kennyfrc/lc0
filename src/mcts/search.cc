@@ -800,7 +800,7 @@ namespace lczero {
                 float Q = child.GetQ(parent_q);
                 float score;
                 if (random_edge) {
-                    score = Random::Get().GetFloat(1.0);
+                    score = Random::Get().GetFloat(1.0)*(child.GetP()+0.25);
                 } else {
                     score = child.GetU(puct_mult) + Q;
                 }
