@@ -188,6 +188,11 @@ class Node {
   ConstIterator Edges() const;
   Iterator Edges();
 
+  // gets a random edge.
+  Edge* GetRandomEdge();
+
+
+
   class NodeRange;
   // Returns range for iterating over nodes. Note that there may be edges
   // without nodes, which will be skipped by this iteration.

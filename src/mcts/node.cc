@@ -38,6 +38,7 @@
 #include "neural/network.h"
 #include "utils/exception.h"
 #include "utils/hashcat.h"
+#include "utils/random.h"
 
 namespace lczero {
 
@@ -203,6 +204,12 @@ Edge* Node::GetEdgeToNode(const Node* node) const {
   assert(node->parent_ == this);
   assert(node->index_ < edges_.size());
   return &edges_[node->index_];
+}
+
+Edge* Node::GetRandomEdge() {
+  int index = Random::Get().GetInt(0, edges_.size());
+  assert(index < edges_.size());
+  return &edges_[index];
 }
 
 std::string Node::DebugString() const {

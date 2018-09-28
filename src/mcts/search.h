@@ -99,6 +99,7 @@ class Search {
   static const char* kTempDecayMovesStr;
   static const char* kTemperatureVisitOffsetStr;
   static const char* kNoiseStr;
+  static const char* kRandomRootStr;
   static const char* kVerboseStatsStr;
   static const char* kAggressiveTimePruningStr;
   static const char* kFpuReductionStr;
@@ -192,6 +193,7 @@ class Search {
   const float kTemperatureVisitOffset;
   const int kTempDecayMoves;
   const bool kNoise;
+  const bool kRandomRoot;
   const bool kVerboseStats;
   const float kAggressiveTimePruning;
   const float kFpuReduction;
