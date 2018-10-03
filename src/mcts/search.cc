@@ -379,35 +379,39 @@ namespace lczero {
 // Return the evaluation of the actual best child, regardless of temperature
 // settings. This differs from GetBestMove, which does obey any temperature
 // settings. So, somethimes, they may return results of different moves.
-    float Search::GetBestEval() const {
-        SharedMutex::SharedLock lock(nodes_mutex_);
-        Mutex::Lock counters_lock(counters_mutex_);
-        float parent_q = -root_node_->GetQ();
-        if (!root_node_->HasChildren()) return parent_q;
-        EdgeAndNode best_edge = GetBestChildNoTemperature(root_node_);
-        return best_edge.GetQ(parent_q);
-    }
 
-    std::pair<Move, Move> Search::GetBestMove() const {
-        SharedMutex::SharedLock lock(nodes_mutex_);
-        Mutex::Lock counters_lock(counters_mutex_);
-        return GetBestMoveInternal();
-    }
+float Search::GetBestEval() const {
+  SharedMutex::SharedLock lock(nodes_mutex_);
+  Mutex::Lock counters_lock(counters_mutex_);
+  float parent_q = -root_node_->GetQ();
+  if (!root_node_->HasChildren()) return parent_q;
+  EdgeAndNode best_edge = GetBestChildNoTemperature(root_node_);
+  return best_edge.GetQ(parent_q);
+}
 
-    bool Search::PopulateRootMoveLimit(MoveList *root_moves) const {
-        // Search moves overrides tablebase.
-        if (!limits_.searchmoves.empty()) {
-            *root_moves = limits_.searchmoves;
-            return false;
-        }
-        auto board = played_history_.Last().GetBoard();
-        if (!syzygy_tb_ || !board.castlings().no_legal_castle() ||
-            (board.ours() + board.theirs()).count() > syzygy_tb_->max_cardinality()) {
-            return false;
-        }
-        return syzygy_tb_->root_probe(played_history_.Last(), root_moves) ||
-               syzygy_tb_->root_probe_wdl(played_history_.Last(), root_moves);
-    }
+std::pair<Move, Move> Search::GetBestMove() const {
+  SharedMutex::SharedLock lock(nodes_mutex_);
+  Mutex::Lock counters_lock(counters_mutex_);
+  return GetBestMoveInternal();
+}
+
+bool Search::PopulateRootMoveLimit(MoveList* root_moves) const {
+  // Search moves overrides tablebase.
+  if (!limits_.searchmoves.empty()) {
+    *root_moves = limits_.searchmoves;
+    return false;
+  }
+  auto board = played_history_.Last().GetBoard();
+  if (!syzygy_tb_ || !board.castlings().no_legal_castle() ||
+      (board.ours() + board.theirs()).count() > syzygy_tb_->max_cardinality()) {
+    return false;
+  }
+  return syzygy_tb_->root_probe(played_history_.Last(),
+                                played_history_.DidRepeatSinceLastZeroingMove(),
+                                root_moves) ||
+         syzygy_tb_->root_probe_wdl(played_history_.Last(), root_moves);
+}
+
 
 // Returns the best move, maybe with temperature (according to the settings).
     std::pair<Move, Move> Search::GetBestMoveInternal() const
@@ -660,67 +664,69 @@ namespace lczero {
 
 // 2. Gather minibatch.
 // ~~~~~~~~~~~~~~~~~~~~
-    void SearchWorker::GatherMinibatch() {
-        // Total number of nodes to process.
-        int minibatch_size = 0;
-        int collisions_found = 0;
-        // Number of nodes processed out of order.
-        int number_out_of_order = 0;
+void SearchWorker::GatherMinibatch() {
+  // Total number of nodes to process.
+  int minibatch_size = 0;
+  int collisions_found = 0;
+  // Number of nodes processed out of order.
+  int number_out_of_order = 0;
 
-        // Gather nodes to process in the current batch.
-        // If we had too many (kMiniBatchSize) nodes out of order, also interrupt the
-        // iteration so that search can exit.
-        // TODO(crem) change that to checking search_->stop_ when bestmove reporting
-        // is in a separate thread.
-        while (minibatch_size < search_->kMiniBatchSize &&
-               number_out_of_order < search_->kMiniBatchSize) {
-            // If there's something to process without touching slow neural net, do it.
-            if (minibatch_size > 0 && computation_->GetCacheMisses() == 0) return;
-            // Pick next node to extend.
-            minibatch_.emplace_back(PickNodeToExtend());
-            auto &picked_node = minibatch_.back();
-            auto *node = picked_node.node;
+  // Gather nodes to process in the current batch.
+  // If we had too many (kMiniBatchSize) nodes out of order, also interrupt the
+  // iteration so that search can exit.
+  // TODO(crem) change that to checking search_->stop_ when bestmove reporting
+  // is in a separate thread.
+  while (minibatch_size < search_->kMiniBatchSize &&
+         number_out_of_order < search_->kMiniBatchSize) {
+    // If there's something to process without touching slow neural net, do it.
+    if (minibatch_size > 0 && computation_->GetCacheMisses() == 0) return;
+    // Pick next node to extend.
+    minibatch_.emplace_back(PickNodeToExtend());
+    auto& picked_node = minibatch_.back();
+    auto* node = picked_node.node;
 
-            // There was a collision. If limit has been reached, return, otherwise
-            // just start search of another node.
-            if (picked_node.is_collision) {
-                if (++collisions_found > search_->kAllowedNodeCollisions) return;
-                continue;
-            }
-            ++minibatch_size;
+    // There was a collision. If limit has been reached, return, otherwise
+    // just start search of another node.
+    if (picked_node.is_collision) {
+      if (++collisions_found > search_->kAllowedNodeCollisions) return;
+      continue;
+    }
+    ++minibatch_size;
 
-            // If node is already known as terminal (win/loss/draw according to rules
-            // of the game), it means that we already visited this node before.
-            if (!node->IsTerminal()) {
-                // Node was never visited, extend it.
-                ExtendNode(node);
+    // If node is already known as terminal (win/loss/draw according to rules
+    // of the game), it means that we already visited this node before.
+    if (!node->IsTerminal()) {
+      // Node was never visited, extend it.
+      ExtendNode(node);
 
-                // Only send non-terminal nodes to a neural network.
-                if (!node->IsTerminal()) {
-                    picked_node.nn_queried = true;
-                    picked_node.is_cache_hit = AddNodeToComputation(node, true);
-                }
-            }
+      // Only send non-terminal nodes to a neural network.
+      if (!node->IsTerminal()) {
+        picked_node.nn_queried = true;
+        picked_node.is_cache_hit = AddNodeToComputation(node, true);
+      }
+    }
 
-            // If out of order eval is enabled and the node to compute we added last
-            // doesn't require NN eval (i.e. it's a cache hit or terminal node), do
-            // out of order eval for it.
-            if (search_->kOutOfOrderEval) {
-                if (node->IsTerminal() || picked_node.is_cache_hit) {
-                    // Perform out of order eval for the last entry in minibatch_.
-                    FetchSingleNodeResult(&picked_node, computation_->GetBatchSize() - 1);
-                    DoBackupUpdateSingleNode(picked_node);
-
-                    // Remove last entry in minibatch_, as it has just been
-                    // processed.
-                    // If NN eval was already processed out of order, remove it.
-                    if (picked_node.nn_queried) computation_->PopCacheHit();
-                    minibatch_.pop_back();
-                    --minibatch_size;
-                    ++number_out_of_order;
-                }
-            }
+    // If out of order eval is enabled and the node to compute we added last
+    // doesn't require NN eval (i.e. it's a cache hit or terminal node), do
+    // out of order eval for it.
+    if (search_->kOutOfOrderEval) {
+      if (node->IsTerminal() || picked_node.is_cache_hit) {
+        // Perform out of order eval for the last entry in minibatch_.
+        FetchSingleNodeResult(&picked_node, computation_->GetBatchSize() - 1);
+        {
+          // Nodes mutex for doing node updates.
+          SharedMutex::Lock lock(search_->nodes_mutex_);
+          DoBackupUpdateSingleNode(picked_node);
         }
+
+        // Remove last entry in minibatch_, as it has just been
+        // processed.
+        // If NN eval was already processed out of order, remove it.
+        if (picked_node.nn_queried) computation_->PopCacheHit();
+        minibatch_.pop_back();
+        --minibatch_size;
+        ++number_out_of_order;
+      }
     }
 
 // Returns node and whether there's been a search collision on the node.
@@ -772,7 +778,7 @@ namespace lczero {
                     : -node->GetQ() -
                       search_->kFpuReduction * std::sqrt(node->GetVisitedPolicy());
 
-            if (is_root_node && search_->kRandomRoot && (node->GetN() > 20000) && (Random::Get().GetFloat(1.0) < 0.1)) {
+            if (is_root_node && search_->kRandomRoot && (node->GetN() > 4000) && (Random::Get().GetFloat(1.0) < 0.1)) {
                 random_edge = true;
             } else {
                 random_edge = false;
@@ -800,7 +806,7 @@ namespace lczero {
                 float Q = child.GetQ(parent_q);
                 float score;
                 if (random_edge) {
-                    score = Random::Get().GetFloat(1.0)*(child.GetP()+0.25);
+                    score = Random::Get().GetFloat(1.0)*(child.GetP()+0.2);
                 } else {
                     score = child.GetU(puct_mult) + Q;
                 }
