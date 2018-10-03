@@ -665,72 +665,73 @@ bool Search::PopulateRootMoveLimit(MoveList* root_moves) const {
 // 2. Gather minibatch.
 // ~~~~~~~~~~~~~~~~~~~~
 void SearchWorker::GatherMinibatch() {
-  // Total number of nodes to process.
-  int minibatch_size = 0;
-  int collisions_found = 0;
-  // Number of nodes processed out of order.
-  int number_out_of_order = 0;
+        // Total number of nodes to process.
+        int minibatch_size = 0;
+        int collisions_found = 0;
+        // Number of nodes processed out of order.
+        int number_out_of_order = 0;
 
-  // Gather nodes to process in the current batch.
-  // If we had too many (kMiniBatchSize) nodes out of order, also interrupt the
-  // iteration so that search can exit.
-  // TODO(crem) change that to checking search_->stop_ when bestmove reporting
-  // is in a separate thread.
-  while (minibatch_size < search_->kMiniBatchSize &&
-         number_out_of_order < search_->kMiniBatchSize) {
-    // If there's something to process without touching slow neural net, do it.
-    if (minibatch_size > 0 && computation_->GetCacheMisses() == 0) return;
-    // Pick next node to extend.
-    minibatch_.emplace_back(PickNodeToExtend());
-    auto& picked_node = minibatch_.back();
-    auto* node = picked_node.node;
+        // Gather nodes to process in the current batch.
+        // If we had too many (kMiniBatchSize) nodes out of order, also interrupt the
+        // iteration so that search can exit.
+        // TODO(crem) change that to checking search_->stop_ when bestmove reporting
+        // is in a separate thread.
+        while (minibatch_size < search_->kMiniBatchSize &&
+               number_out_of_order < search_->kMiniBatchSize) {
+            // If there's something to process without touching slow neural net, do it.
+            if (minibatch_size > 0 && computation_->GetCacheMisses() == 0) return;
+            // Pick next node to extend.
+            minibatch_.emplace_back(PickNodeToExtend());
+            auto &picked_node = minibatch_.back();
+            auto *node = picked_node.node;
 
-    // There was a collision. If limit has been reached, return, otherwise
-    // just start search of another node.
-    if (picked_node.is_collision) {
-      if (++collisions_found > search_->kAllowedNodeCollisions) return;
-      continue;
-    }
-    ++minibatch_size;
+            // There was a collision. If limit has been reached, return, otherwise
+            // just start search of another node.
+            if (picked_node.is_collision) {
+                if (++collisions_found > search_->kAllowedNodeCollisions) return;
+                continue;
+            }
+            ++minibatch_size;
 
-    // If node is already known as terminal (win/loss/draw according to rules
-    // of the game), it means that we already visited this node before.
-    if (!node->IsTerminal()) {
-      // Node was never visited, extend it.
-      ExtendNode(node);
+            // If node is already known as terminal (win/loss/draw according to rules
+            // of the game), it means that we already visited this node before.
+            if (!node->IsTerminal()) {
+                // Node was never visited, extend it.
+                ExtendNode(node);
 
-      // Only send non-terminal nodes to a neural network.
-      if (!node->IsTerminal()) {
-        picked_node.nn_queried = true;
-        picked_node.is_cache_hit = AddNodeToComputation(node, true);
-      }
-    }
+                // Only send non-terminal nodes to a neural network.
+                if (!node->IsTerminal()) {
+                    picked_node.nn_queried = true;
+                    picked_node.is_cache_hit = AddNodeToComputation(node, true);
+                }
+            }
 
-    // If out of order eval is enabled and the node to compute we added last
-    // doesn't require NN eval (i.e. it's a cache hit or terminal node), do
-    // out of order eval for it.
-    if (search_->kOutOfOrderEval) {
-      if (node->IsTerminal() || picked_node.is_cache_hit) {
-        // Perform out of order eval for the last entry in minibatch_.
-        FetchSingleNodeResult(&picked_node, computation_->GetBatchSize() - 1);
-        {
-          // Nodes mutex for doing node updates.
-          SharedMutex::Lock lock(search_->nodes_mutex_);
-          DoBackupUpdateSingleNode(picked_node);
+            // If out of order eval is enabled and the node to compute we added last
+            // doesn't require NN eval (i.e. it's a cache hit or terminal node), do
+            // out of order eval for it.
+            if (search_->kOutOfOrderEval) {
+                if (node->IsTerminal() || picked_node.is_cache_hit) {
+                    // Perform out of order eval for the last entry in minibatch_.
+                    FetchSingleNodeResult(&picked_node, computation_->GetBatchSize() - 1);
+                    {
+                        // Nodes mutex for doing node updates.
+                        SharedMutex::Lock lock(search_->nodes_mutex_);
+                        DoBackupUpdateSingleNode(picked_node);
+                    }
+
+                    // Remove last entry in minibatch_, as it has just been
+                    // processed.
+                    // If NN eval was already processed out of order, remove it.
+                    if (picked_node.nn_queried) computation_->PopCacheHit();
+                    minibatch_.pop_back();
+                    --minibatch_size;
+                    ++number_out_of_order;
+                }
+            }
         }
-
-        // Remove last entry in minibatch_, as it has just been
-        // processed.
-        // If NN eval was already processed out of order, remove it.
-        if (picked_node.nn_queried) computation_->PopCacheHit();
-        minibatch_.pop_back();
-        --minibatch_size;
-        ++number_out_of_order;
-      }
     }
-
 // Returns node and whether there's been a search collision on the node.
-    SearchWorker::NodeToProcess SearchWorker::PickNodeToExtend() {
+SearchWorker::NodeToProcess SearchWorker::PickNodeToExtend() {
         // Starting from search_->root_node_, generate a playout, choosing a
         // node at each level according to the MCTS formula. n_in_flight_ is
         // incremented for each node in the playout (via TryStartScoreUpdate()).
@@ -738,6 +739,7 @@ void SearchWorker::GatherMinibatch() {
         Node *node = search_->root_node_;
         Node::Iterator best_edge;
         bool random_edge = false;
+        bool round_robin = false;
 
         // Initialize position sequence with pre-move position.
         history_.Trim(search_->played_history_.GetLength());
@@ -778,8 +780,13 @@ void SearchWorker::GatherMinibatch() {
                     : -node->GetQ() -
                       search_->kFpuReduction * std::sqrt(node->GetVisitedPolicy());
 
-            if (is_root_node && search_->kRandomRoot && (node->GetN() > 4000) && (Random::Get().GetFloat(1.0) < 0.1)) {
+            if (is_root_node && search_->kRandomRoot && (node->GetN() > 4000) && (Random::Get().GetFloat(1.0) < 0.25)) {
                 random_edge = true;
+                if (Random::Get().GetInt(0,3) == 0) {
+                    round_robin = true;
+                } else {
+                    round_robin = false;
+                }
             } else {
                 random_edge = false;
             }
@@ -806,7 +813,11 @@ void SearchWorker::GatherMinibatch() {
                 float Q = child.GetQ(parent_q);
                 float score;
                 if (random_edge) {
-                    score = Random::Get().GetFloat(1.0)*(child.GetP()+0.2);
+                    if (round_robin) {
+                        score = Random::Get().GetFloat(1.0);
+                    } else {
+                        score = Random::Get().GetFloat(1.0)*(child.GetQ(0.0)+2.0);
+                    }
                 } else {
                     score = child.GetU(puct_mult) + Q;
                 }
@@ -826,6 +837,7 @@ void SearchWorker::GatherMinibatch() {
             }
             is_root_node = false;
             random_edge = false;
+            round_robin = false;
         }
     }
 

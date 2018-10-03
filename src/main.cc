@@ -33,10 +33,16 @@
 #include "version.h"
 
 int main(int argc, const char** argv) {
-  std::cerr << "       _" << std::endl;
-  std::cerr << "|   _ | |" << std::endl;
-  std::cerr << "|_ |_ |_| v" << GetVersionStr() << " built " << __DATE__
-            << std::endl;
+    std::cerr << "   T" << std::endl;
+    std::cerr << " .-\"-." << std::endl;
+    std::cerr << "|  ___|" << std::endl;
+    std::cerr << "| (.\/.)" << std::endl;
+    std::cerr << "|  ,,,' " << std::endl;
+    std::cerr << "| '###" << std::endl;
+    std::cerr << " '----'" << std::endl;
+    std::cerr << "Bender (based on lc0) " << GetVersionStr() << " built " << __DATE__
+              << std::endl;
+
   using namespace lczero;
   CommandLine::Init(argc, argv);
   CommandLine::RegisterMode("uci", "(default) Act as UCI engine");
