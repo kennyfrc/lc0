@@ -89,6 +89,8 @@ class SelfPlayGame {
   // Search that is currently in progress. Stored in members so that Abort()
   // can stop it.
   std::unique_ptr<Search> search_;
+  std::unique_ptr<SyzygyTablebase> syzygy_tb_;
+
   bool abort_ = false;
   GameResult game_result_ = GameResult::UNDECIDED;
   // Track minimum eval for each player so that GetWorstEvalForWinnerOrDraw()

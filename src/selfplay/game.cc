@@ -36,6 +36,8 @@ namespace lczero {
 namespace {
 const char* kReuseTreeStr = "Reuse the node statistics between moves";
 const char* kResignPercentageStr = "Resign when win percentage drops below n";
+const char* kSyzygyTablebaseStr = "List of Syzygy tablebase directories";
+
 }  // namespace
 
 void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
@@ -47,6 +49,21 @@ void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
 SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
                            bool shared_tree)
     : options_{player1, player2} {
+
+  // init TB
+
+  std::string tb_paths = options_[0].uci_options->Get<std::string>(kSyzygyTablebaseStr);
+  if (!tb_paths.empty()) {
+    syzygy_tb_ = std::make_unique<SyzygyTablebase>();
+    std::cerr << "Loading Syzygy tablebases from " << tb_paths << std::endl;
+    if (!syzygy_tb_->init(tb_paths)) {
+      std::cerr << "Failed to load Syzygy tablebases!" << std::endl;
+      syzygy_tb_ = nullptr;
+    } else {
+      std::cerr << "Loaded Syzygy tablebases!" << std::endl;
+    }
+  }
+
   tree_[0] = std::make_shared<NodeTree>();
 
   std::string epd = epdqueue::Pop();
@@ -90,8 +107,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads,
       search_ = std::make_unique<Search>(
           *tree_[idx], options_[idx].network, options_[idx].best_move_callback,
           options_[idx].info_callback, options_[idx].search_limits,
-          *options_[idx].uci_options, options_[idx].cache, nullptr);
-      // TODO: add Syzygy option for selfplay.
+          *options_[idx].uci_options, options_[idx].cache, syzygy_tb_.get());
     }
 
     // Do search.
