@@ -13,6 +13,7 @@ epdqueue::~epdqueue() {
 boost::mutex epdqueue::qlock_;
 std::queue<std::string> epdqueue::queue_;
 
+
 void epdqueue::FillQ() {
     qlock_.lock();
     std::fstream infile("startpos.epd");

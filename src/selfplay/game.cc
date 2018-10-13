@@ -40,6 +40,23 @@ const char* kSyzygyTablebaseStr = "List of Syzygy tablebase directories";
 
 }  // namespace
 
+    std::shared_ptr<SyzygyTablebase> SelfPlayGame::GetTB(std::string path) {
+        static SyzygyTablebase tb;
+        static bool done = false;
+
+        if (!path.empty() && !done) {
+            done = true;
+            std::cerr << "Loading Syzygy tablebases from " << path << std::endl;
+            if (!tb.init(path)) {
+                std::cerr << "Failed to load Syzygy tablebases!" << std::endl;
+            } else {
+                std::cerr << "Loaded Syzygy tablebases!" << std::endl;
+            }
+        }
+
+        return std::shared_ptr<SyzygyTablebase>(&tb);
+    }
+
 void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
   options->Add<BoolOption>(kReuseTreeStr, "reuse-tree") = false;
   options->Add<FloatOption>(kResignPercentageStr, 0.0f, 100.0f,
@@ -54,14 +71,7 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
 
   std::string tb_paths = options_[0].uci_options->Get<std::string>(kSyzygyTablebaseStr);
   if (!tb_paths.empty()) {
-    syzygy_tb_ = std::make_unique<SyzygyTablebase>();
-    std::cerr << "Loading Syzygy tablebases from " << tb_paths << std::endl;
-    if (!syzygy_tb_->init(tb_paths)) {
-      std::cerr << "Failed to load Syzygy tablebases!" << std::endl;
-      syzygy_tb_ = nullptr;
-    } else {
-      std::cerr << "Loaded Syzygy tablebases!" << std::endl;
-    }
+    syzygy_tb_ = GetTB(tb_paths);
   }
 
   tree_[0] = std::make_shared<NodeTree>();

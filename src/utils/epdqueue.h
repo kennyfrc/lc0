@@ -12,6 +12,7 @@
 #include <boost/thread/mutex.hpp>
 
 
+
 class epdqueue {
 public:
     epdqueue();
@@ -27,6 +28,7 @@ private:
     static const std::string epds[];
     static boost::mutex qlock_;
     static std::queue<std::string> queue_;
+
 };
 
 
