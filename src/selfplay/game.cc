@@ -30,6 +30,7 @@
 
 #include "neural/writer.h"
 #include "utils/epdqueue.h"
+#include "utils/random.h"
 
 namespace lczero {
 
@@ -37,6 +38,7 @@ namespace {
 const char* kReuseTreeStr = "Reuse the node statistics between moves";
 const char* kResignPercentageStr = "Resign when win percentage drops below n";
 const char* kSyzygyTablebaseStr = "List of Syzygy tablebase directories";
+const char* kStartposStr = "Use startpos.epd to start self-play games";
 
 }  // namespace
 
@@ -74,18 +76,36 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
     syzygy_tb_ = GetTB(tb_paths);
   }
 
-  tree_[0] = std::make_shared<NodeTree>();
-
-  std::string epd = epdqueue::Pop();
-  if (epd == "") {
-    // out of epd's
-    abort_ = true;
-    return;
-  } else {
-    epd.append(" 0 1");
+  bool use_epd = false;
+  if (options_[0].uci_options->Get<bool>(kStartposStr)) {
+    use_epd = true;
   }
 
-  tree_[0]->ResetToPosition(epd, {});
+
+  tree_[0] = std::make_shared<NodeTree>();
+  std::string epd;
+
+  if (use_epd) {
+    epd = epdqueue::Pop();
+    if (epd == "") {
+      // out of epd's
+      abort_ = true;
+      return;
+    } else {
+      int ply = Random::Get().GetInt(0,50);
+
+      std::ostringstream stringStream;
+      stringStream << " " << ply << " 80";
+
+      epd.append(stringStream.str());
+      std::cerr << epd << std::endl;
+    }
+
+    tree_[0]->ResetToPosition(epd, {});
+  } else {
+    epd = ChessBoard::kStartingFen;
+    tree_[0]->ResetToPosition(epd, {});
+  }
 
   if (shared_tree) {
     tree_[1] = tree_[0];
