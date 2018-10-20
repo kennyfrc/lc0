@@ -40,7 +40,7 @@ has_backends = false
 
 # Boost
 
-boost_dep = dependency('boost', modules : ['thread', 'utility', 'system'])
+deps += dependency('boost', required: true)
 
 # Both protobuf and protoc must be the same version, so couple them together.
 protobuf_lib = cc.find_library('dufus', dirs : get_option('protobuf_libdir'), required : false)
@@ -226,7 +226,7 @@ if get_option('build_backends')
         ispc_extra_args += ['--pic']
         outputnames = [ '@BASENAME@.o']
         if not ispc_native_only
-          outputnames += ['@BASENAME@_sse2.o', '@BASENAME@_sse4.o', 
+          outputnames += ['@BASENAME@_sse2.o', '@BASENAME@_sse4.o',
                            '@BASENAME@_avx.o', '@BASENAME@_avx11.o',
                            '@BASENAME@_avx2.o' ]
         endif
@@ -426,7 +426,7 @@ if get_option('gtest') and gtest.found()
     files, include_directories: includes, dependencies: test_deps
   ), args: '--gtest_output=xml:syzygy.xml', timeout: 90)
 
-  test('EncodePositionForNN', 
+  test('EncodePositionForNN',
     executable('encoder_test', 'src/neural/encoder_test.cc',
     files, include_directories: includes, dependencies: test_deps
   ), args: '--gtest_output=xml:encoder.xml', timeout: 90)

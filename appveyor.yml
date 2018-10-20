@@ -21,7 +21,9 @@ environment:
     CUDA: false
     GTEST: true
 install:
-- cmd: robocopy C:\Libraries\boost_1_66_0 C:\local\boost_1_66_0 /e /NFL /NDL /NJH /NJS /nc /ns /np
+- cmd: SET BOOST_ROOT=C:\Libraries\boost_1_67_0
+- cmd: SET BOOST_LIBRARYDIR=C:\Libraries\boost_1_67_0\lib64-msvc-14.1
+- cmd: SET BOOST_INCLUDEDIR=C:\Libraries\boost_1_67_0\
 - cmd: IF %CUDA%==false nuget install OpenBLAS -Version 0.2.14.1 -OutputDirectory C:\cache
 - cmd: IF %CUDA%==false nuget install opencl-nug -Version 0.777.12 -OutputDirectory C:\cache
 - cmd: IF %BLAS%==true IF NOT EXIST C:\cache\ispc-v1.9.2-windows appveyor DownloadFile https://sourceforge.net/projects/ispcmirror/files/v1.9.2/ispc-v1.9.2-windows.zip
@@ -90,6 +92,7 @@ test_script:
 - cmd: IF %GTEST%==true meson test --print-errorlogs
 - cmd: cd ..
 on_finish:
+- cmd: type C:\projects\lc0\build\meson-logs\meson-log.txt
 - cmd: cd build
 - cmd: IF %GTEST%==true for %%a in (*.xml) do curl -F file=@%%a https://ci.appveyor.com/api/testresults/junit/%APPVEYOR_JOB_ID%
 - cmd: cd ..
