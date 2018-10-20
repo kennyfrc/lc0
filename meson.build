@@ -40,7 +40,7 @@ has_backends = false
 
 # Boost
 
-deps += dependency('boost', required: true)
+boost_dep = dependency('boost', required: true)
 
 # Both protobuf and protoc must be the same version, so couple them together.
 protobuf_lib = cc.find_library('dufus', dirs : get_option('protobuf_libdir'), required : false)
