@@ -69,7 +69,7 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
 }
 
 void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
-                        bool enable_resign) {
+                        bool enable_resign, SyzygyTablebase* syzygy_tb) {
   bool blacks_move = false;
 
   // Do moves while not end of the game. (And while not abort_)
@@ -95,8 +95,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
       search_ = std::make_unique<Search>(
           *tree_[idx], options_[idx].network, options_[idx].best_move_callback,
           options_[idx].info_callback, options_[idx].search_limits,
-          *options_[idx].uci_options, options_[idx].cache, nullptr);
-      // TODO: add Syzygy option for selfplay.
+          *options_[idx].uci_options, options_[idx].cache, syzygy_tb);
     }
 
     // Do search.
