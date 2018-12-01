@@ -297,19 +297,19 @@ uint64_t ReverseBitsInBytes(uint64_t v) {
 }
 }  // namespace
 
-V4TrainingData Node::GetV4TrainingData(
+V3TrainingData Node::GetV3TrainingData(
     GameResult game_result, const PositionHistory& history,
-    FillEmptyHistory fill_empty_history, float best_eval) const {
-  V4TrainingData result;
+    FillEmptyHistory fill_empty_history) const {
+  V3TrainingData result;
 
   // Set version.
-  result.version = 4;
+  result.version = 3;
 
   // Populate probabilities.
   float total_n = static_cast<float>(GetChildrenVisits());
   // Prevent garbage/invalid training data from being uploaded to server.
   if (total_n <= 0.0f) throw Exception("Search generated invalid data!");
-  std::memset(result.probabilities, -1, sizeof(result.probabilities));
+  std::memset(result.probabilities, 0, sizeof(result.probabilities));
   for (const auto& child : Edges()) {
     result.probabilities[child.edge()->GetMove().as_nn_index()] =
         child.GetN() / total_n;
@@ -342,9 +342,6 @@ V4TrainingData Node::GetV4TrainingData(
   } else {
     result.result = 0;
   }
-  
-  // Aggregate evaluation Q.
-  result.best_q = best_eval;
 
   return result;
 }

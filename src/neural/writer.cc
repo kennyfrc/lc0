@@ -59,7 +59,7 @@ TrainingDataWriter::TrainingDataWriter(int game_id, std::string folder) {
   if (!fout_) throw Exception("Cannot create gzip file " + filename_);
 }
 
-void TrainingDataWriter::WriteChunk(const V4TrainingData& data) {
+void TrainingDataWriter::WriteChunk(const V3TrainingData& data) {
   auto bytes_written =
       gzwrite(fout_, reinterpret_cast<const char*>(&data), sizeof(data));
   if (bytes_written != sizeof(data)) {
