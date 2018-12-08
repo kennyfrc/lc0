@@ -36,9 +36,13 @@
 
 namespace lczero {
 
-TrainingDataWriter::TrainingDataWriter(int game_id) {
-  static std::string directory =
+TrainingDataWriter::TrainingDataWriter(int game_id, std::string folder) {
+  static std::string sDirectory =
       CommandLine::BinaryDirectory() + "/data-" + Random::Get().GetString(12);
+
+  std::string directory = folder.empty()
+                              ? sDirectory
+                              : CommandLine::BinaryDirectory() + "/" + folder;
   // It's fine if it already exists.
   CreateDirectory(directory.c_str());
 
