@@ -56,14 +56,19 @@ std::string goodies::Pop() {
 
     // tack on fen stuff
     int ply = 0;
-    if (lczero::Random::Get().GetFloat(1.0) <= 0.1) {
+    if (lczero::Random::Get().GetInt(1,10) > 9) {
         ply = lczero::Random::Get().GetInt(0,99);
+        fprintf(stderr, "ply is %d\n", ply);
+    } else {
+        fprintf(stderr, "No special ply.\n");
     }
 
     std::ostringstream stringStream;
     stringStream << " " << ply << " 80";
 
     retval.append(stringStream.str());
+
+    fprintf(stderr, "%s\n", retval.c_str());
 
     return retval;
 }
