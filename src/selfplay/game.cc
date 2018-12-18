@@ -105,7 +105,7 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
             fen = goodies::Pop();
         }
     } else {
-        fen = ChessBoard::kStartingFen;
+        fen = ChessBoard::kStartposFen;
     }
     tree_[0]->ResetToPosition(fen, {});
 
