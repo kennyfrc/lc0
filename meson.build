@@ -116,6 +116,7 @@ files += [
   'src/utils/string.cc',
   'src/utils/transpose.cc',
   'src/utils/weights_adapter.cc',
+  'src/utils/goodies.cc',
 ]
 includes += include_directories('src')
 
