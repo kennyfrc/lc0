@@ -151,8 +151,23 @@ files += [
   'src/utils/string.cc',
   'src/utils/transpose.cc',
   'src/utils/weights_adapter.cc',
+  'src/pgnlib/PGNCommentText.cpp',
+  'src/pgnlib/PGNException.cpp',
+  'src/pgnlib/PGNGame.cpp',
+  'src/pgnlib/PGNGameCollection.cpp',
+  'src/pgnlib/PGNGameResult.cpp',
+  'src/pgnlib/PGNMove.cpp',
+  'src/pgnlib/PGNMoveList.cpp',
+  'src/pgnlib/PGNParser.cpp',
+  'src/pgnlib/PGNPiece.cpp',
+  'src/pgnlib/PGNPly.cpp',
+  'src/pgnlib/PGNPosition.cpp',
+  'src/pgnlib/PGNSquare.cpp',
+  'src/pgnlib/PGNTag.cpp',
+  'src/pgnlib/PGNTagList.cpp',
 ]
 includes += include_directories('src')
+includes += include_directories('src/pgnlib')
 
 
 #############################################################################
