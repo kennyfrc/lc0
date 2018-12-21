@@ -121,7 +121,6 @@ bool pgn::Square::operator != (const pgn::Square& src) const
 	return !(src == *this);
 }
 
-#if 0
 //
 // these methods remap board coordinates as follows
 //
@@ -150,7 +149,6 @@ int pgn::Square::rowIndex() const
 
 	return (row_ - '1');
 }
-#endif
 
 std::ostream& pgn::operator << ( std::ostream& os, const pgn::Square& src ) 
 {
