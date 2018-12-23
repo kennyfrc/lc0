@@ -67,6 +67,9 @@ const OptionId kSyzygyTablebaseId{
     "List of Syzygy tablebase directories, list entries separated by system "
     "separator (\";\" for Windows, \":\" for Linux).",
     's'};
+const OptionId kPGNOpeningsId{
+    "pgn-opening-file", "PgnOpeningFile",
+    "The PGN openings used to make self-play more diverse"};
 
 }  // namespace
 
@@ -89,6 +92,7 @@ void SelfPlayTournament::PopulateOptions(OptionsParser* options) {
   options->Add<BoolOption>(kVerboseThinkingId) = false;
   options->Add<FloatOption>(kResignPlaythroughId, 0.0f, 100.0f) = 0.0f;
   options->Add<StringOption>(kSyzygyTablebaseId);
+  options->Add<StringOption>(kPGNOpeningsId);
 
   SelfPlayGame::PopulateUciParams(options);
 
@@ -148,6 +152,9 @@ SelfPlayTournament::SelfPlayTournament(const OptionsDict& options,
     }
   }
 
+  // PGN openings path
+  pgn_openings_path_ = options.Get<std::string>(kPGNOpeningsId.GetId());
+
   static const char* kPlayerNames[2] = {"player1", "player2"};
   // Initializing networks.
   const auto& player1_opts = options.GetSubdict(kPlayerNames[0]);
@@ -187,7 +194,8 @@ SelfPlayTournament::SelfPlayTournament(const OptionsDict& options,
   }
 }
 
-void SelfPlayTournament::PlayOneGame(int game_number) {
+void SelfPlayTournament::PlayOneGame(int game_number,
+                                     pgn::GameCollection* pgn_openings) {
   bool player1_black;  // Whether player1 will player as black in this game.
   {
     Mutex::Lock lock(mutex_);
@@ -259,9 +267,15 @@ void SelfPlayTournament::PlayOneGame(int game_number) {
   const bool enable_resign =
       Random::Get().GetFloat(100.0f) >= kResignPlaythrough;
 
+  pgn::Game pgn_opening;
+  if (pgn_openings && pgn_openings->size() > 0) {
+    size_t idx = game_number % pgn_openings->size();
+    pgn_opening = (*pgn_openings)[idx];
+  }
+
   // PLAY GAME!
   game.Play(kThreads[color_idx[0]], kThreads[color_idx[1]], kTraining,
-            enable_resign, syzygy_tb_.get());
+            enable_resign, syzygy_tb_.get(), &pgn_opening);
 
   // If game was aborted, it's still undecided.
   if (game.GetGameResult() != GameResult::UNDECIDED) {
@@ -302,6 +316,30 @@ void SelfPlayTournament::PlayOneGame(int game_number) {
 }
 
 void SelfPlayTournament::Worker() {
+  // Load openings PGN game collection
+  std::unique_ptr<std::ifstream> pgnfile = nullptr;
+  std::unique_ptr<pgn::GameCollection> pgn_openings = nullptr;
+
+  {
+    Mutex::Lock lock(mutex_);
+    size_t thread_id = 0;
+    for (auto& t : threads_) {
+      if (t.get_id() == std::this_thread::get_id()) {
+        break;
+      }
+      thread_id++;
+    }
+    if (!pgn_openings_path_.empty()) {
+      pgnfile = std::make_unique<std::ifstream>(pgn_openings_path_.c_str());
+      pgn_openings = std::make_unique<pgn::GameCollection>();
+      CERR << "Thread: " << thread_id
+           << ", loading pgn openings from " << pgn_openings_path_;
+      (*pgnfile) >> (*pgn_openings);
+      CERR << "Thread: " << thread_id
+           << ", opening loading ok, games : " << pgn_openings->size();
+    }
+  }
+
   // Play games while game limit is not reached (or while not aborted).
   while (true) {
     int game_id;
@@ -311,7 +349,7 @@ void SelfPlayTournament::Worker() {
       if (kTotalGames != -1 && games_count_ >= kTotalGames) break;
       game_id = games_count_++;
     }
-    PlayOneGame(game_id);
+    PlayOneGame(game_id, pgn_openings.get());
   }
 }
 
