@@ -95,7 +95,7 @@ class SelfPlayTournament {
   const OptionsDict player_options_[2];
   SelfPlayLimits search_limits_[2];
   std::unique_ptr<SyzygyTablebase> syzygy_tb_ = nullptr;
-  std::string pgn_openings_path_ = "";
+  std::unique_ptr<pgn::GameCollection> pgn_openings_ = nullptr;
 
   CallbackUciResponder::BestMoveCallback best_move_callback_;
   CallbackUciResponder::ThinkingCallback info_callback_;
