@@ -143,7 +143,18 @@ SelfPlayTournament::SelfPlayTournament(const OptionsDict& options,
   }
 
   // PGN openings path
-  pgn_openings_path_ = options.Get<std::string>(kPGNOpeningsId.GetId());
+  std::string pgn_openings_path =
+      options.Get<std::string>(kPGNOpeningsId.GetId());
+  // Load openings PGN game collection
+  std::unique_ptr<std::ifstream> pgnfile = nullptr;
+
+  if (!pgn_openings_path.empty()) {
+    CERR << "Loading pgn openings from " << pgn_openings_path;
+    pgnfile = std::make_unique<std::ifstream>(pgn_openings_path.c_str());
+    pgn_openings_ = std::make_unique<pgn::GameCollection>();
+    (*pgnfile) >> (*pgn_openings_);
+    CERR << "Opening loading ok, games : " << pgn_openings_->size();
+  }
 
   static const char* kPlayerNames[2] = {"player1", "player2"};
   // Initializing networks.
@@ -305,10 +316,6 @@ void SelfPlayTournament::PlayOneGame(int game_number,
 }
 
 void SelfPlayTournament::Worker() {
-  // Load openings PGN game collection
-  std::unique_ptr<std::ifstream> pgnfile = nullptr;
-  std::unique_ptr<pgn::GameCollection> pgn_openings = nullptr;
-
   {
     Mutex::Lock lock(mutex_);
     size_t thread_id = 0;
@@ -317,15 +324,6 @@ void SelfPlayTournament::Worker() {
         break;
       }
       thread_id++;
-    }
-    if (!pgn_openings_path_.empty()) {
-      pgnfile = std::make_unique<std::ifstream>(pgn_openings_path_.c_str());
-      pgn_openings = std::make_unique<pgn::GameCollection>();
-      CERR << "Thread: " << thread_id
-           << ", loading pgn openings from " << pgn_openings_path_;
-      (*pgnfile) >> (*pgn_openings);
-      CERR << "Thread: " << thread_id
-           << ", opening loading ok, games : " << pgn_openings->size();
     }
   }
 
@@ -338,7 +336,7 @@ void SelfPlayTournament::Worker() {
       if (kTotalGames != -1 && games_count_ >= kTotalGames) break;
       game_id = games_count_++;
     }
-    PlayOneGame(game_id, pgn_openings.get());
+    PlayOneGame(game_id, pgn_openings_.get());
   }
 }
 
