@@ -1,3 +1,116 @@
+v0.20.1 (2019-01-07)
+~~~~~~~
+
+* Change to atomic for cache capacity. (#665)
+
+v0.20.1-rc3 (2019-01-06)
+~~~~~~~~~~~
+
+* Remove ffast-math from the default flags (#661)
+
+v0.20.1-rc2 (2019-01-05)
+~~~~~~~~~~~
+
+* Don't use Winograd for 1x1 conv. (#659)
+* Fix issues with pondering and search limits. (#658)
+* Check for zero capacity in cache (#648)
+* fix undefined behavior in DiscoverWeightsFile() (#650)
+* fix fastmath.h undefined behavior and clean it up (#643)
+
+v0.20.1-rc1 (2019-01-01)
+~~~~~~~~~~~
+
+* Simplify movestogo approximator to use median residual time. (#634)
+* Replace time curve logic with movestogo approximator. (#271)
+* Cache best edge to improve PickNodeToExtend performance. (#619)
+* fix building with tensorflow 1.12 (#626)
+* Minor changes to `src/chess` (#606)
+* make uci search parameters the defaults ones (#609)
+* Preallocate nodes in advance of their need to avoid the allocation being behind a mutex. (#613)
+* imrpove meson error when no backends enabled (#614)
+* allow building with the mklml library as an mkl alternative (#612)
+* Only build the history up if we are actually going to extend the position. (#607)
+* fix warning (#604)
+
+v0.20.0 (2019-01-01)
+~~~~~~~
+
+* no lto builds by default (#625)
+
+v0.20.0-rc2 (2018-12-23)
+~~~~~~~~~~~
+
+* Fix demux to match cuda expected threading model for computations. (#605)
+
+v0.20.0-rc1 (2018-12-22)
+~~~~~~~~~~~
+
+* Squeeze-and-Excitation Networks are now supported! (lc0.org/se)
+* Older text network files are no longer supported.
+* Various performance fixes (most major being having fast approximate math
+  functions).
+* For systems with multiple GPUs, in addition to "multiplexing" backend
+  we now also have "demux" backend and "roundrobin" backend.
+* Compiler settings tweaks (use VS2017 for windows builds, always have LTO
+  enabled, windows releases have PGO enabled).
+* Benchmark mode has more options now (e.g. movetime) and saner defaults.
+* Added an option to prevent engine to resign too early (used in training).
+* Fixed a bug when number of visits could be too high in collision nodes.
+  The fix is pretty hacky, there will be better fix later.
+* 32-bit version compiles again.
+
+v0.19.1 (2018-12-10)
+~~~~~~~
+
+(no changes relative to v0.19.1-rc2)
+
+v0.19.1-rc2 (2018-12-07)
+~~~~~~~~~~~
+
+* Temperature and FPU related params. (#568)
+* Rework Cpuct related params. (#567)
+
+v0.19.1-rc1 (2018-12-06)
+~~~~~~~~~~~
+
+* Updated cpuct formula from alphazero paper. (#563)
+* remove UpdateFromUciOptions() from EnsureReady() (#558)
+* revert IsSearchActive() and better fix for one of #500 crashes (#555)
+
+v0.19.0 (2018-11-19)
+~~~~~~~
+
+* remove Wait() from EngineController::Stop() (#522)
+
+v0.19.0-rc5 (2018-11-17)
+~~~~~~~~~~~
+
+* OpenCL: replace thread_local with a resource pool. (#516)
+* optional wtime and btime (#515)
+* Make convolve1 work with workgroup size of 128 (#514)
+* adjust average depth calculation for multivisits (#510)
+
+v0.19.0-rc4 (2018-11-12)
+~~~~~~~~~~~
+
+* Microseconds have 6 digits, not 3! (#505)
+* use bestmove_is_sent_ for Search::IsSearchActive() (#502)
+
+v0.19.0-rc3 (2018-11-07)
+~~~~~~~~~~~
+
+* Fix OpenCL tuner always loading the first saved tuning (#491)
+* Do not show warning when ComputeBlocking() takes too much time. (#494)
+* Output microseconds in log rather than milliseconds. (#495)
+* Add benchmark features (#483)
+* Fix EncodePositionForNN test failure (#490)
+
+v0.19.0-rc2 (2018-11-03)
+~~~~~~~~~~~
+
+* Version v0.19.0-rc1 reported it's version as v0.19.0-dev
+  Therefore v0.19.0-rc2 is released with this issue fixed.
+
 v0.19.0-rc1 (2018-11-03)
 ~~~~~~~~~~~
 

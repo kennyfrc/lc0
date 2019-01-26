@@ -50,7 +50,10 @@ else
 endif
 protoc = find_program('protoc', required : false)
 # For tensorflow skip system protobuf, chances are it will not work.
-if not protobuf_dep.found() or not protoc.found() or get_option('tensorflow')
+if get_option('protobuf-3-6-0')
+  deps += subproject('protobuf-3.6.0').get_variable('protobuf_dep')
+  protoc = subproject('protobuf-3.6.0').get_variable('protoc')
+elif not protobuf_dep.found() or not protoc.found() or get_option('tensorflow')
   deps += subproject('protobuf').get_variable('protobuf_dep')
   protoc = subproject('protobuf').get_variable('protoc')
 else
@@ -62,6 +65,18 @@ endif
 
 gen = generator(protoc, output: ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'],
   arguments : ['--proto_path=@CURRENT_SOURCE_DIR@/libs/lczero-common', '--cpp_out=@BUILD_DIR@', '@INPUT@'])
+
+if run_command('checkdir.py', 'libs/lczero-common/proto').returncode() != 0
+  if run_command('git', 'status').returncode() == 0
+    message('updating git submodule libs/lczero-common')
+    run_command('git', 'submodule', 'update', '--init', '--recursive')
+  else
+    message('cloning lczero-common.git into libs/lczero-common')
+    run_command('git', 'clone', '--depth=1',
+                'https://github.com/LeelaChessZero/lczero-common.git',
+                'libs/lczero-common/')
+  endif
+endif
 
 files += gen.process('libs/lczero-common/proto/net.proto',
   preserve_path_from : meson.current_source_dir() + '/libs/lczero-common/')
@@ -85,9 +100,11 @@ files += [
   'src/neural/factory.cc',
   'src/neural/loader.cc',
   'src/neural/network_check.cc',
+  'src/neural/network_demux.cc',
   'src/neural/network_legacy.cc',
   'src/neural/network_mux.cc',
   'src/neural/network_random.cc',
+  'src/neural/network_rr.cc',
   'src/neural/network_st_batch.cc',
   'src/neural/writer.cc',
   'src/selfplay/game.cc',
@@ -157,6 +174,7 @@ if get_option('build_backends')
       tensorflow_include,
       tensorflow_include[0] + '/bazel-genfiles',
       tensorflow_include[0] + '/tensorflow/contrib/makefile/downloads',
+      tensorflow_include[0] + '/tensorflow/contrib/makefile/downloads/absl',
       tensorflow_include[0] + '/tensorflow/contrib/makefile/downloads/eigen',
       tensorflow_include[0] + '/tensorflow/contrib/makefile/downloads/gemmlowp',
       tensorflow_include[0] + '/tensorflow/contrib/makefile/downloads/nsync/public',
@@ -181,6 +199,9 @@ if get_option('build_backends')
 
   mkl_libdirs = get_option('mkl_libdirs')
   mkl_lib = cc.find_library('mkl_rt', dirs: mkl_libdirs, required: false)
+  if not mkl_lib.found()
+    mkl_lib = cc.find_library('mklml', dirs: mkl_libdirs, required: false)
+  endif
 
   openblas_libdirs = get_option('openblas_libdirs')
   openblas_lib = cc.find_library('openblas.dll', dirs: openblas_libdirs, required: false)
@@ -338,7 +359,8 @@ if get_option('build_backends')
   cu_blas = cc.find_library('cublas', dirs: cudnn_libdirs, required: false)
   cu_dnn = cc.find_library('cudnn', dirs: cudnn_libdirs, required: false)
   cu_dart = cc.find_library('cudart', dirs: cudnn_libdirs, required: false)
-  nvcc = find_program('/usr/local/cuda/bin/nvcc', 'nvcc', required: false)
+  nvcc = find_program('/usr/local/cuda/bin/nvcc', '/opt/cuda/bin/nvcc',
+                      'nvcc', required: false)
 
   #.cc files
   cuda_files = [
@@ -395,9 +417,9 @@ endif # if get_option('build_backends')
 if not has_backends and get_option('build_backends')
   error('''
 
-        No usable computation backends (cudnn/tensorflow/etc) are found.
-        If you want to build it with random only backend, pass
-        -D build_backends=false to a meson build.''')
+        No usable computation backends (cudnn/opencl/blas/etc) enabled.
+        If you want to build with the random backend only, add
+        -Dbuild_backends=false to the build command line.''')
 endif
 
 
