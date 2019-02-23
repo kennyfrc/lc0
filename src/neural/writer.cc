@@ -28,6 +28,7 @@
 #include "neural/writer.h"
 
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include "utils/commandline.h"
 #include "utils/exception.h"
@@ -43,6 +44,9 @@ TrainingDataWriter::TrainingDataWriter(int game_id, std::string folder) {
   std::string directory = folder.empty()
                               ? sDirectory
                               : CommandLine::BinaryDirectory() + "/" + folder;
+
+  std::cout << "Going to write a game to directory: " << directory << std::endl;
+
   // It's fine if it already exists.
   CreateDirectory(directory.c_str());
 
