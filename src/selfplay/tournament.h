@@ -65,7 +65,7 @@ class SelfPlayTournament {
 
  private:
   void Worker();
-  void PlayOneGame(int game_id, pgn::GameCollection* pgn_openings = nullptr);
+  void PlayOneGame(int game_id);
 
   Mutex mutex_;
   // Whether next game will be black for player1.
