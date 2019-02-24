@@ -205,8 +205,7 @@ SelfPlayTournament::SelfPlayTournament(const OptionsDict& options,
   }
 }
 
-void SelfPlayTournament::PlayOneGame(int game_number,
-                                     pgn::GameCollection* pgn_openings) {
+void SelfPlayTournament::PlayOneGame(int game_number) {
   bool player1_black;  // Whether player1 will player as black in this game.
   {
     Mutex::Lock lock(mutex_);
@@ -279,14 +278,23 @@ void SelfPlayTournament::PlayOneGame(int game_number,
       Random::Get().GetFloat(100.0f) >= kResignPlaythrough;
 
   pgn::Game pgn_opening;
-  if (pgn_openings && pgn_openings->size() > 0) {
-    size_t idx = game_number % pgn_openings->size();
-    pgn_opening = (*pgn_openings)[idx];
+  {
+    Mutex::Lock lock(mutex_);
+    pgn::GameCollection* pgn_openings = pgn_openings_.get();
+    if (pgn_openings && pgn_openings->size() > 0) {
+      std::cout << "Reading pgn opening for game " << game_number << std::endl;
+      size_t idx = game_number % pgn_openings->size();
+      pgn_opening = (*pgn_openings)[idx];
+      std::cout << "Correctly read pgn opening for game " << game_number
+                << std::endl;
+    }
   }
 
   // PLAY GAME!
   game.Play(kThreads[color_idx[0]], kThreads[color_idx[1]], kTraining,
-            enable_resign, syzygy_tb_.get(), &pgn_opening);
+            pgn_opening, enable_resign, syzygy_tb_.get());
+
+  std::cout << "Finished playing game " << game_number << std::endl;
 
   // If game was aborted, it's still undecided.
   if (game.GetGameResult() != GameResult::UNDECIDED) {
@@ -301,7 +309,6 @@ void SelfPlayTournament::PlayOneGame(int game_number,
           game.GetWorstEvalForWinnerOrDraw();
     }
     if (kTraining) {
-      Mutex::Lock lock(mutex_);
       TrainingDataWriter writer(game_number);
       game.WriteTrainingData(&writer);
       writer.Finalize();
@@ -348,7 +355,8 @@ void SelfPlayTournament::Worker() {
       if (kTotalGames != -1 && games_count_ >= kTotalGames) break;
       game_id = games_count_++;
     }
-    PlayOneGame(game_id, pgn_openings_.get());
+    std::cout << "Going to start game " << game_id << std::endl;
+    PlayOneGame(game_id);
   }
 }
 

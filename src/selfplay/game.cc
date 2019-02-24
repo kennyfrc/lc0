@@ -147,12 +147,14 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
 }
 
 void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
-                        bool enable_resign, SyzygyTablebase* syzygy_tb,
-                        pgn::Game* opening) {
+                        const pgn::Game& opening, bool enable_resign,
+                        SyzygyTablebase* syzygy_tb) {
   bool blacks_move = false;
 
-  pgn::MoveList openingMovelist = opening ? opening->moves() : pgn::MoveList();
+  mutex_.lock();
+  const pgn::MoveList openingMovelist = opening.moves();
   auto openingMove = openingMovelist.begin();
+  mutex_.unlock();
 
   // Do moves while not end of the game. (And while not abort_)
   while (!abort_) {
@@ -233,22 +235,27 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
 
     // Add best (or book) move to the tree.
     Move move;
-    if (openingMove != openingMovelist.end()) {
-      auto pgn_move = blacks_move ? openingMove->black() : openingMove->white();
-      move = ply_to_lc0_move(pgn_move,
-                             tree_[idx]->GetPositionHistory().Last().GetBoard(),
-                             blacks_move);
-      if (blacks_move) {
-        openingMove++;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (openingMove != openingMovelist.end()) {
+        auto pgn_move =
+            blacks_move ? openingMove->black() : openingMove->white();
+        move = ply_to_lc0_move(
+            pgn_move, tree_[idx]->GetPositionHistory().Last().GetBoard(),
+            blacks_move);
+        if (blacks_move) {
+          openingMove++;
+        }
+      } else {
+        move = search_->GetBestMove().first;
       }
-    } else {
-      move = search_->GetBestMove().first;
     }
 
     tree_[0]->MakeMove(move);
     if (tree_[0] != tree_[1]) tree_[1]->MakeMove(move);
     blacks_move = !blacks_move;
   }
+  std::cout << "Exiting Play method" << std::endl;
 }
 
 std::vector<Move> SelfPlayGame::GetMoves() const {

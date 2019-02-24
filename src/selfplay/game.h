@@ -32,8 +32,8 @@
 #include "mcts/search.h"
 #include "neural/cache.h"
 #include "neural/network.h"
-#include "utils/optionsparser.h"
 #include "pgnlib/PGNGame.h"
+#include "utils/optionsparser.h"
 
 namespace lczero {
 
@@ -71,8 +71,8 @@ class SelfPlayGame {
 
   // Starts the game and blocks until the game is finished.
   void Play(int white_threads, int black_threads, bool training,
-            bool enable_resign = true, SyzygyTablebase* syzygy_tb = nullptr,
-            pgn::Game* opening = nullptr);
+            const pgn::Game& opening, bool enable_resign = true,
+            SyzygyTablebase* syzygy_tb = nullptr);
   // Aborts the game currently played, doesn't matter if it's synchronous or
   // not.
   void Abort();
