@@ -1,5 +1,5 @@
 # This file is part of Leela Chess Zero.
-# Copyright (C) 2018 The LCZero Authors
+# Copyright (C) 2018-2019 The LCZero Authors
 #
 # Leela Chess is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -293,7 +293,6 @@ if get_option('build_backends')
 
     shared_files = [
     'src/neural/shared/activation.cc',
-    'src/neural/shared/batchnorm.cc',
     'src/neural/shared/winograd_filter.cc',
     ]
 
@@ -340,7 +339,6 @@ if get_option('build_backends')
 
     shared_files = [
     'src/neural/shared/activation.cc',
-    'src/neural/shared/batchnorm.cc',
     'src/neural/shared/winograd_filter.cc',
     ]
 
@@ -359,8 +357,8 @@ if get_option('build_backends')
   cu_blas = cc.find_library('cublas', dirs: cudnn_libdirs, required: false)
   cu_dnn = cc.find_library('cudnn', dirs: cudnn_libdirs, required: false)
   cu_dart = cc.find_library('cudart', dirs: cudnn_libdirs, required: false)
-  nvcc = find_program('/usr/local/cuda/bin/nvcc', '/opt/cuda/bin/nvcc',
-                      'nvcc', required: false)
+  nvcc = find_program('nvcc', '/usr/local/cuda/bin/nvcc', '/opt/cuda/bin/nvcc',
+                      required: false)
 
   #.cc files
   cuda_files = [
@@ -448,6 +446,10 @@ endif
 
 if not get_option('popcnt')
   add_project_arguments('-DNO_POPCNT', language : 'cpp')
+endif
+
+if not get_option('pext')
+  add_project_arguments('-DNO_PEXT', language : 'cpp')
 endif
 
 executable('lc0', 'src/main.cc',
