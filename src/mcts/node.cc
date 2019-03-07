@@ -351,12 +351,7 @@ V4TrainingData Node::GetV4TrainingData(GameResult game_result,
   }
 
   // Aggregate evaluation Q.
-  result.root_q = -GetQ();
   result.best_q = best_q;
-
-  // Draw probability of WDL head.
-  result.root_d = GetD();
-  result.best_d = best_d;
 
   return result;
 }
