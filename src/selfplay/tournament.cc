@@ -301,6 +301,7 @@ void SelfPlayTournament::PlayOneGame(int game_number,
           game.GetWorstEvalForWinnerOrDraw();
     }
     if (kTraining) {
+      Mutex::Lock lock(mutex_);
       TrainingDataWriter writer(game_number);
       game.WriteTrainingData(&writer);
       writer.Finalize();

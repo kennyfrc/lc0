@@ -28,6 +28,7 @@
 #include "neural/writer.h"
 
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include "utils/commandline.h"
 #include "utils/exception.h"
@@ -39,6 +40,13 @@ namespace lczero {
 TrainingDataWriter::TrainingDataWriter(int game_id) {
   static std::string directory =
       CommandLine::BinaryDirectory() + "/data-" + Random::Get().GetString(12);
+
+  std::string directory = folder.empty()
+                              ? sDirectory
+                              : CommandLine::BinaryDirectory() + "/" + folder;
+
+  std::cout << "Going to write a game to directory: " << directory << std::endl;
+
   // It's fine if it already exists.
   CreateDirectory(directory.c_str());
 
