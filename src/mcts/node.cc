@@ -415,6 +415,8 @@ void NodeTree::MakeMove(Move move) {
   current_head_ =
       new_head ? new_head : current_head_->CreateSingleChildNode(move);
   history_.Append(move);
+
+  if (current_head_->IsTerminal()) TrimTreeAtHead();
 }
 
 void NodeTree::TrimTreeAtHead() {
