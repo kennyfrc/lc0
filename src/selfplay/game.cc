@@ -124,8 +124,7 @@ const OptionId kResignEarliestMoveId{"resign-earliest-move",
                                      "ResignEarliestMove",
                                      "Earliest move that resign is allowed."};
 const OptionId kWriteTrainingDataForBookMoves{
-    "write-training-data-for-book-moves",
-    "WriteTrainingDataForBookMoves",
+    "write-training-data-for-book-moves", "WriteTrainingDataForBookMoves",
     "Whether or not to write training data for book moves."};
 }  // namespace
 
@@ -173,7 +172,8 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
     const bool writeTrainingDataForBookMoves{
         options_[idx].uci_options->Get<bool>(
             kWriteTrainingDataForBookMoves.GetId())};
-    const bool skipSearchAndPlayBookMove{inBook && !writeTrainingDataForBookMoves};
+    const bool skipSearchAndPlayBookMove{inBook &&
+                                         !writeTrainingDataForBookMoves};
 
     if (!skipSearchAndPlayBookMove) {
       // Initialize search.
@@ -198,51 +198,53 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
       // Do search.
       search_->RunBlocking(blacks_move ? black_threads : white_threads);
       if (abort_) break;
-    }
 
-    auto best_eval = search_->GetBestEval();
-    if (training && !skipSearchAndPlayBookMove) {
-      // Append training data. The GameResult is later overwritten.
-      auto best_q = best_eval.first;
-      auto best_d = best_eval.second;
-      training_data_.push_back(tree_[idx]->GetCurrentHead()->GetV4TrainingData(
-          GameResult::UNDECIDED, tree_[idx]->GetPositionHistory(),
-          search_->GetParams().GetHistoryFill(), best_q, best_d));
-    }
-
-    float eval = best_eval.first;
-    eval = (eval + 1) / 2;
-    if (eval < min_eval_[idx]) min_eval_[idx] = eval;
-    const int move_number = tree_[0]->GetPositionHistory().GetLength() / 2 + 1;
-    if (enable_resign && move_number >= options_[idx].uci_options->Get<int>(
-                                            kResignEarliestMoveId.GetId())) {
-      const float resignpct =
-          options_[idx].uci_options->Get<float>(kResignPercentageId.GetId()) /
-          100;
-      if (options_[idx].uci_options->Get<bool>(kResignWDLStyleId.GetId())) {
-        auto best_w = (best_eval.first + 1.0f - best_eval.second) / 2.0f;
+      auto best_eval = search_->GetBestEval();
+      if (training) {
+        // Append training data. The GameResult is later overwritten.
+        auto best_q = best_eval.first;
         auto best_d = best_eval.second;
-        auto best_l = best_w - best_eval.first;
-        auto threshold = 1.0f - resignpct;
-        if (best_w > threshold) {
-          game_result_ =
-              blacks_move ? GameResult::BLACK_WON : GameResult::WHITE_WON;
-          break;
-        }
-        if (best_l > threshold) {
-          game_result_ =
-              blacks_move ? GameResult::WHITE_WON : GameResult::BLACK_WON;
-          break;
-        }
-        if (best_d > threshold) {
-          game_result_ = GameResult::DRAW;
-          break;
-        }
-      } else {
-        if (eval < resignpct) {  // always false when resignpct == 0
-          game_result_ =
-              blacks_move ? GameResult::WHITE_WON : GameResult::BLACK_WON;
-          break;
+        training_data_.push_back(
+            tree_[idx]->GetCurrentHead()->GetV4TrainingData(
+                GameResult::UNDECIDED, tree_[idx]->GetPositionHistory(),
+                search_->GetParams().GetHistoryFill(), best_q, best_d));
+      }
+
+      float eval = best_eval.first;
+      eval = (eval + 1) / 2;
+      if (eval < min_eval_[idx]) min_eval_[idx] = eval;
+      const int move_number =
+          tree_[0]->GetPositionHistory().GetLength() / 2 + 1;
+      if (enable_resign && move_number >= options_[idx].uci_options->Get<int>(
+                                              kResignEarliestMoveId.GetId())) {
+        const float resignpct =
+            options_[idx].uci_options->Get<float>(kResignPercentageId.GetId()) /
+            100;
+        if (options_[idx].uci_options->Get<bool>(kResignWDLStyleId.GetId())) {
+          auto best_w = (best_eval.first + 1.0f - best_eval.second) / 2.0f;
+          auto best_d = best_eval.second;
+          auto best_l = best_w - best_eval.first;
+          auto threshold = 1.0f - resignpct;
+          if (best_w > threshold) {
+            game_result_ =
+                blacks_move ? GameResult::BLACK_WON : GameResult::WHITE_WON;
+            break;
+          }
+          if (best_l > threshold) {
+            game_result_ =
+                blacks_move ? GameResult::WHITE_WON : GameResult::BLACK_WON;
+            break;
+          }
+          if (best_d > threshold) {
+            game_result_ = GameResult::DRAW;
+            break;
+          }
+        } else {
+          if (eval < resignpct) {  // always false when resignpct == 0
+            game_result_ =
+                blacks_move ? GameResult::WHITE_WON : GameResult::BLACK_WON;
+            break;
+          }
         }
       }
     }
