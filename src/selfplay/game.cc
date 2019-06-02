@@ -123,6 +123,10 @@ const OptionId kResignWDLStyleId{
 const OptionId kResignEarliestMoveId{"resign-earliest-move",
                                      "ResignEarliestMove",
                                      "Earliest move that resign is allowed."};
+const OptionId kWriteTrainingDataForBookMoves{
+    "write-training-data-for-book-moves",
+    "WriteTrainingDataForBookMoves",
+    "Whether or not to write training data for book moves."};
 }  // namespace
 
 void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
@@ -130,6 +134,7 @@ void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
   options->Add<BoolOption>(kResignWDLStyleId) = false;
   options->Add<FloatOption>(kResignPercentageId, 0.0f, 100.0f) = 0.0f;
   options->Add<IntOption>(kResignEarliestMoveId, 0, 1000) = 0;
+  options->Add<BoolOption>(kWriteTrainingDataForBookMoves) = false;
 }
 
 SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
@@ -163,31 +168,40 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
     // If endgame, stop.
     if (game_result_ != GameResult::UNDECIDED) break;
 
-    // Initialize search.
     const int idx = blacks_move ? 1 : 0;
-    if (!options_[idx].uci_options->Get<bool>(kReuseTreeId.GetId())) {
-      tree_[idx]->TrimTreeAtHead();
-    }
-    if (options_[idx].search_limits.movetime > -1) {
-      options_[idx].search_limits.search_deadline =
-          std::chrono::steady_clock::now() +
-          std::chrono::milliseconds(options_[idx].search_limits.movetime);
-    }
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      if (abort_) break;
-      search_ = std::make_unique<Search>(
-          *tree_[idx], options_[idx].network, options_[idx].best_move_callback,
-          options_[idx].info_callback, options_[idx].search_limits,
-          *options_[idx].uci_options, options_[idx].cache, syzygy_tb);
-    }
+    const bool inBook{openingMove != openingMovelist.end()};
+    const bool writeTrainingDataForBookMoves{
+        options_[idx].uci_options->Get<bool>(
+            kWriteTrainingDataForBookMoves.GetId())};
+    const bool skipSearchAndPlayBookMove{inBook && !writeTrainingDataForBookMoves};
 
-    // Do search.
-    search_->RunBlocking(blacks_move ? black_threads : white_threads);
-    if (abort_) break;
+    if (!skipSearchAndPlayBookMove) {
+      // Initialize search.
+      if (!options_[idx].uci_options->Get<bool>(kReuseTreeId.GetId())) {
+        tree_[idx]->TrimTreeAtHead();
+      }
+      if (options_[idx].search_limits.movetime > -1) {
+        options_[idx].search_limits.search_deadline =
+            std::chrono::steady_clock::now() +
+            std::chrono::milliseconds(options_[idx].search_limits.movetime);
+      }
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (abort_) break;
+        search_ = std::make_unique<Search>(
+            *tree_[idx], options_[idx].network,
+            options_[idx].best_move_callback, options_[idx].info_callback,
+            options_[idx].search_limits, *options_[idx].uci_options,
+            options_[idx].cache, syzygy_tb);
+      }
+
+      // Do search.
+      search_->RunBlocking(blacks_move ? black_threads : white_threads);
+      if (abort_) break;
+    }
 
     auto best_eval = search_->GetBestEval();
-    if (training) {
+    if (training && !skipSearchAndPlayBookMove) {
       // Append training data. The GameResult is later overwritten.
       auto best_q = best_eval.first;
       auto best_d = best_eval.second;
@@ -237,7 +251,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
     Move move;
     {
       std::lock_guard<std::mutex> lock(mutex_);
-      if (openingMove != openingMovelist.end()) {
+      if (inBook) {
         auto pgn_move =
             blacks_move ? openingMove->black() : openingMove->white();
         move = ply_to_lc0_move(
@@ -247,6 +261,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
           openingMove++;
         }
       } else {
+        assert(!skipSearchAndPlayBookMove);
         move = search_->GetBestMove().first;
       }
     }
