@@ -94,19 +94,11 @@ lczero::Move ply_to_lc0_move(pgn::Ply& ply, const lczero::ChessBoard& board,
               assert(false);
           }
         }
-
-        // Had to comment this to get working for this use case. Not sure why it
-        // has to be commented though...
-        /*
-        if (mirror) {
-          legal_move.Mirror();
-        }
-        */
         return legal_move;
       }
     }
   }
-  assert(false);
+  throw Exception("Didn't understood move: " + ply.str());
   return {};
 }
 
@@ -168,7 +160,10 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
     if (game_result_ != GameResult::UNDECIDED) break;
 
     const int idx = blacks_move ? 1 : 0;
-    const bool inBook{openingMove != openingMovelist.end()};
+    bool inBook = {
+        openingMove != openingMovelist.end() &&
+        (blacks_move ? openingMove->black() : openingMove->white()).valid()
+    };
     const bool writeTrainingDataForBookMoves{
         options_[idx].uci_options->Get<bool>(
             kWriteTrainingDataForBookMoves.GetId())};
@@ -259,12 +254,13 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
         move = ply_to_lc0_move(
             pgn_move, tree_[idx]->GetPositionHistory().Last().GetBoard(),
             blacks_move);
-        if (blacks_move) {
-          openingMove++;
-        }
       } else {
         assert(!skipSearchAndPlayBookMove);
         move = search_->GetBestMove().first;
+      }
+
+      if (openingMove != openingMovelist.end() && blacks_move) {
+        openingMove++;
       }
     }
 
