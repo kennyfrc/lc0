@@ -283,7 +283,7 @@ void SelfPlayTournament::PlayOneGame(int game_number) {
     pgn::GameCollection* pgn_openings = pgn_openings_.get();
     if (pgn_openings && pgn_openings->size() > 0) {
       std::cout << "Reading pgn opening for game " << game_number << std::endl;
-      size_t idx = game_number % pgn_openings->size();
+      size_t idx = Random::Get().GetInt(0, pgn_openings->size() - 1);
       pgn_opening = (*pgn_openings)[idx];
       std::cout << "Correctly read pgn opening for game " << game_number
                 << std::endl;
