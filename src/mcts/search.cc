@@ -135,6 +135,14 @@ void Search::SendUciInfo() REQUIRES(nodes_mutex_) {
     } else if (score_type == "Q") {
       uci_info.score = edge.GetQ(default_q) * 10000;
     }
+    { // WDL
+        uci_info.score_d = edge.GetD() * 1000;
+        const float wl = 1.0f - edge.GetD();
+        const float w = (edge.GetQ(default_q) + 1.0f) / 2;
+        const float l = 1.0f - w;
+        uci_info.score_w = wl * w * 1000;
+        uci_info.score_l = wl * l * 1000;
+    }
     if (params_.GetMultiPv() > 1) uci_info.multipv = multipv;
     bool flip = played_history_.IsBlackToMove();
     for (auto iter = edge; iter;
