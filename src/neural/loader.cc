@@ -145,18 +145,14 @@ WeightsFile ParseWeightsProto(const std::string& buffer) {
 
   const auto min_version =
       GetVersionStr(net.min_version().major(), net.min_version().minor(),
-                    net.min_version().patch(), "", "");
-  const auto lc0_ver = GetVersionInt();
+                    net.min_version().patch(), "");
+  const auto lc0_ver = GetVersionInt(97, 98, 99);
   const auto net_ver =
       GetVersionInt(net.min_version().major(), net.min_version().minor(),
                     net.min_version().patch());
 
-  FixOlderWeightsFile(&net);
-
-  // Weights files with this signature are also compatible.
-  if (net_ver != 0x5c99973 && net_ver > lc0_ver)
-    throw Exception("Invalid weight file: lc0 version >= " + min_version +
-                    " required.");
+  if (net_ver != lc0_ver)
+    throw Exception("Invalid weight file.");
 
   if (net.format().weights_encoding() != pblczero::Format::LINEAR16)
     throw Exception("Invalid weight file: unsupported encoding.");
