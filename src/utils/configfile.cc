@@ -41,7 +41,7 @@ const OptionId kConfigFileId{
     "Path to a configuration file. The format of the file is one command line "
     "parameter per line, e.g.:\n--weights=/path/to/weights",
     'c'};
-const char* kDefaultConfigFile = "lc0.config";
+const char* kDefaultConfigFile = "fatfritz.config";
 }  // namespace
 
 std::vector<std::string> ConfigFile::arguments_;
