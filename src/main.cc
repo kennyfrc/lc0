@@ -38,10 +38,9 @@ int main(int argc, const char** argv) {
   using namespace lczero;
   EscCodes::Init();
   LOGFILE << "Lc0 started.";
-  CERR << EscCodes::Bold() << EscCodes::Red() << "       _";
-  CERR << "|   _ | |";
-  CERR << "|_ |_ |_|" << EscCodes::Reset() << " v" << GetVersionStr()
-       << " built " << __DATE__;
+  CERR << "Fat Fritz (in lc0)";
+  CERR << "Engine Authors: \"Leela devs (lc0), A. Silver (NN)\""
+  using namespace lczero;
 
   try {
     InitializeMagicBitboards();
