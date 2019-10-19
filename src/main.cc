@@ -35,9 +35,8 @@
 
 int main(int argc, const char** argv) {
   LOGFILE << "Lc0 started.";
-  CERR << "       _";
-  CERR << "|   _ | |";
-  CERR << "|_ |_ |_| v" << GetVersionStr() << " built " << __DATE__;
+  CERR << "Fat Fritz (in lc0)";
+  CERR << "Engine Authors: \"Leela devs (lc0), A. Silver (NN)\""
   using namespace lczero;
 
   InitializeMagicBitboards();
