@@ -208,7 +208,7 @@ void SearchParams::Populate(OptionsParser* options) {
   options->Add<FloatOption>(kSmartPruningFactorId, 0.0f, 10.0f) = 1.33f;
   std::vector<std::string> fpu_strategy = {"reduction", "absolute"};
   options->Add<ChoiceOption>(kFpuStrategyId, fpu_strategy) = "absolute";
-  options->Add<FloatOption>(kFpuValueId, -100.0f, 100.0f) = 1.74f;
+  options->Add<FloatOption>(kFpuValueId, -100.0f, 100.0f) = -1.0f;
   fpu_strategy.push_back("same");
   options->Add<ChoiceOption>(kFpuStrategyAtRootId, fpu_strategy) = "same";
   options->Add<FloatOption>(kFpuValueAtRootId, -100.0f, 100.0f) = 1.2f;
