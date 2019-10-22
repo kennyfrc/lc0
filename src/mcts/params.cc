@@ -192,9 +192,9 @@ void SearchParams::Populate(OptionsParser* options) {
   // Many of them are overridden with training specific values in tournament.cc.
   options->Add<IntOption>(kMiniBatchSizeId, 1, 1024) = 256;
   options->Add<IntOption>(kMaxPrefetchBatchId, 0, 1024) = 32;
-  options->Add<FloatOption>(kCpuctId, 0.0f, 100.0f) = 3.67f;
+  options->Add<FloatOption>(kCpuctId, 0.0f, 100.0f) = 3.9f;
   options->Add<FloatOption>(kCpuctBaseId, 1.0f, 1000000000.0f) = 19652.0f;
-  options->Add<FloatOption>(kCpuctFactorId, 0.0f, 1000.0f) = 2.54f;
+  options->Add<FloatOption>(kCpuctFactorId, 0.0f, 1000.0f) = 2.0f;
   options->Add<FloatOption>(kTemperatureId, 0.0f, 100.0f) = 0.0f;
   options->Add<IntOption>(kTempDecayMovesId, 0, 100) = 0;
   options->Add<IntOption>(kTemperatureCutoffMoveId, 0, 1000) = 0;
@@ -207,13 +207,13 @@ void SearchParams::Populate(OptionsParser* options) {
   options->Add<BoolOption>(kLogLiveStatsId) = false;
   options->Add<FloatOption>(kSmartPruningFactorId, 0.0f, 10.0f) = 1.33f;
   std::vector<std::string> fpu_strategy = {"reduction", "absolute"};
-  options->Add<ChoiceOption>(kFpuStrategyId, fpu_strategy) = "absolute";
+  options->Add<ChoiceOption>(kFpuStrategyId, fpu_strategy) = "reduction";
   options->Add<FloatOption>(kFpuValueId, -100.0f, 100.0f) = 1.74f;
   fpu_strategy.push_back("same");
-  options->Add<ChoiceOption>(kFpuStrategyAtRootId, fpu_strategy) = "same";
+  options->Add<ChoiceOption>(kFpuStrategyAtRootId, fpu_strategy) = "reduction";
   options->Add<FloatOption>(kFpuValueAtRootId, -100.0f, 100.0f) = 1.2f;
   options->Add<IntOption>(kCacheHistoryLengthId, 0, 7) = 0;
-  options->Add<FloatOption>(kPolicySoftmaxTempId, 0.1f, 10.0f) = 1.94f;
+  options->Add<FloatOption>(kPolicySoftmaxTempId, 0.1f, 10.0f) = 2.15f;
   options->Add<IntOption>(kMaxCollisionEventsId, 1, 1024) = 32;
   options->Add<IntOption>(kMaxCollisionVisitsId, 1, 1000000) = 9999;
   options->Add<BoolOption>(kOutOfOrderEvalId) = true;
