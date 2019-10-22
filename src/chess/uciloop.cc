@@ -221,7 +221,7 @@ void UciLoop::SendResponses(const std::vector<std::string>& responses) {
 }
 
 void UciLoop::SendId() {
-  SendResponse("id name Fat Fritz (in lc0)");
+  SendResponse("id name Fat Fritz Jr. (in lc0)");
   SendResponse("id author Leela devs (lc0), A. Silver (NN)");
 }
 
