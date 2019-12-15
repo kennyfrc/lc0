@@ -100,7 +100,7 @@ void EngineController::PopulateOptions(OptionsParser* options) {
   // This option is currently not used by lc0 in any way.
   options->Add<BoolOption>(kPonderId) = true;
   options->Add<BoolOption>(kUciChess960) = false;
-  options->Add<BoolOption>(kShowWDL) = false;
+  options->Add<BoolOption>(kShowWDL) = true;
   options->Add<BoolOption>(kShowMovesleft) = false;
 
   ConfigFile::PopulateOptions(options);
