@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+
 #include "utils/exception.h"
 #include "utils/logging.h"
 #include "utils/string.h"
@@ -248,10 +249,9 @@ void UciLoop::SendInfo(const std::vector<ThinkingInfo>& infos) {
     if (info.time >= 0) res += " time " + std::to_string(info.time);
     if (info.nodes >= 0) res += " nodes " + std::to_string(info.nodes);
     if (info.score) res += " score cp " + std::to_string(*info.score);
-    if (info.score_w && info.score_d && info.score_l) {
-      res += " wdl " + std::to_string(*info.score_w) + " " +
-             std::to_string(*info.score_d) + " " +
-             std::to_string(*info.score_l);
+    if (info.wdl) {
+      res += " wdl " + std::to_string(info.wdl->w) + " " +
+             std::to_string(info.wdl->d) + " " + std::to_string(info.wdl->l);
     }
     if (info.hashfull >= 0) res += " hashfull " + std::to_string(info.hashfull);
     if (info.nps >= 0) res += " nps " + std::to_string(info.nps);

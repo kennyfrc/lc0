@@ -30,6 +30,7 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <zlib.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -59,7 +60,8 @@ std::string DecompressGzip(const std::string& filename) {
   const gzFile file = gzopen(filename.c_str(), "rb");
   if (!file) throw Exception("Cannot read weights from " + filename);
   while (true) {
-    const int sz = gzread(file, &buffer[bytes_read], buffer.size() - bytes_read);
+    const int sz =
+        gzread(file, &buffer[bytes_read], buffer.size() - bytes_read);
     if (sz < 0) {
       int errnum;
       throw Exception(gzerror(file, &errnum));
@@ -199,8 +201,8 @@ std::string DiscoverWeightsFile() {
     // First byte of the protobuf stream is 0x0d for fixed32, so we ignore it as
     // our own magic should suffice.
     const auto magic = buf[1] | (static_cast<uint32_t>(buf[2]) << 8) |
-                 (static_cast<uint32_t>(buf[3]) << 16) |
-                 (static_cast<uint32_t>(buf[4]) << 24);
+                       (static_cast<uint32_t>(buf[3]) << 16) |
+                       (static_cast<uint32_t>(buf[4]) << 24);
     if (magic == kWeightMagic) {
       CERR << "Found pb network file: " << candidate.second;
       return candidate.second;
