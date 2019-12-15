@@ -56,8 +56,6 @@ const OptionId kPonderId{"ponder", "Ponder",
 const OptionId kUciChess960{
     "chess960", "UCI_Chess960",
     "Castling moves are encoded as \"king takes rook\"."};
-const OptionId kShowWDL{"show-wdl", "UCI_ShowWDL",
-                        "Show win, draw and lose probability."};
 
 MoveList StringsToMovelist(const std::vector<std::string>& moves,
                            const ChessBoard& board) {
@@ -90,7 +88,6 @@ void EngineController::PopulateOptions(OptionsParser* options) {
   // This option is currently not used by lc0 in any way.
   options->Add<BoolOption>(kPonderId) = true;
   options->Add<BoolOption>(kUciChess960) = false;
-  options->Add<BoolOption>(kShowWDL) = false;
 
   ConfigFile::PopulateOptions(options);
   PopulateTimeManagementOptions(RunType::kUci, options);
@@ -243,10 +240,8 @@ void EngineController::Go(const GoParams& params) {
         std::move(responder), tree_->HeadPosition().GetBoard());
   }
 
-  if (!options_.Get<bool>(kShowWDL.GetId())) {
-    // Strip WDL information from the response.
-    responder = std::make_unique<WDLResponseFilter>(std::move(responder));
-  }
+  // Strip WDL information from the response.
+  responder = std::make_unique<WDLResponseFilter>(std::move(responder));
 
   auto stopper =
       time_manager_->GetStopper(options_, params, tree_->HeadPosition());
