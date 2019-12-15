@@ -222,7 +222,7 @@ void UciLoop::SendResponses(const std::vector<std::string>& responses) {
 }
 
 void UciLoop::SendId() {
-  SendResponse("id name Fat Fritz Jr (for CPU)");
+  SendResponse("id name Fat Fritz Jr (for GPU)");
   SendResponse("id author Leela devs (lc0), A. Silver (NN)");
 }
 
