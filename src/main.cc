@@ -38,7 +38,7 @@ int main(int argc, const char** argv) {
   using namespace lczero;
   EscCodes::Init();
   LOGFILE << "Lc0 started.";
-  CERR << "Fat Fritz Jr (for GPU)";
+  CERR << "Fat Fritz Jr (for CPU)";
   using namespace lczero;
 
   try {
