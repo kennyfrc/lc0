@@ -132,7 +132,6 @@ class SearchParams {
   static const OptionId kHistoryFillId;
   static const OptionId kMinimumKLDGainPerNode;
   static const OptionId kKLDGainAverageInterval;
-  static const OptionId kShortSightednessId;
   static const OptionId kWeightedAverageAlphaId;
 
  private:
@@ -161,7 +160,6 @@ class SearchParams {
   const bool kSyzygyFastPlay;
   const FillEmptyHistory kHistoryFill;
   const int kMiniBatchSize;
-  const float kShortSightedness;
   const float kWeightedAverageAlpha;
 };
 

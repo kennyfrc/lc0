@@ -1299,7 +1299,7 @@ void SearchWorker::DoBackupUpdateSingleNode(
       v = n->GetQ();
       d = n->GetD();
     }
-    n->FinalizeScoreUpdate(v / (1.0f + params_.GetShortSightedness() * depth),
+    n->FinalizeScoreUpdate(v,
                            d, node_to_process.multivisit,
                            params_.GetWeightedAverageAlpha());
 
