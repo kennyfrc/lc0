@@ -187,6 +187,11 @@ const OptionId SearchParams::kKLDGainAverageInterval{
     "Used to decide how frequently to evaluate the average KLDGainPerNode to "
     "check the MinimumKLDGainPerNode, if specified."};
 
+const OptionId SearchParams::kWeightedAverageAlphaId{
+    "weighted-average-alpha", "WeightedAverageAlpha",
+    "1.0 is equivalent to the regular averaging, higher values make the MCTS"
+    "backup to prioritize newer values over older ones."};
+
 void SearchParams::Populate(OptionsParser* options) {
   // Here the uci optimized defaults" are set.
   // Many of them are overridden with training specific values in tournament.cc.
@@ -227,6 +232,8 @@ void SearchParams::Populate(OptionsParser* options) {
   options->Add<ChoiceOption>(kHistoryFillId, history_fill_opt) = "fen_only";
   options->Add<IntOption>(kKLDGainAverageInterval, 1, 10000000) = 100;
   options->Add<FloatOption>(kMinimumKLDGainPerNode, 0.0f, 1.0f) = 0.0f;
+  options->Add<FloatOption>(kShortSightednessId, 0.0f, 1.0f) = 0.0f;
+  options->Add<FloatOption>(kWeightedAverageAlphaId, 1.0f, 10.0f) = 1.0f;
 
   options->HideOption(kLogLiveStatsId);
 }
@@ -258,6 +265,9 @@ SearchParams::SearchParams(const OptionsDict& options)
       kSyzygyFastPlay(options.Get<bool>(kSyzygyFastPlayId.GetId())),
       kHistoryFill(
           EncodeHistoryFill(options.Get<std::string>(kHistoryFillId.GetId()))),
-      kMiniBatchSize(options.Get<int>(kMiniBatchSizeId.GetId())) {}
+      kMiniBatchSize(options.Get<int>(kMiniBatchSizeId.GetId())),
+      kShortSightedness(options.Get<float>(kShortSightednessId.GetId())),
+      kWeightedAverageAlpha(
+          options.Get<float>(kWeightedAverageAlphaId.GetId())) {}
 
 }  // namespace lczero

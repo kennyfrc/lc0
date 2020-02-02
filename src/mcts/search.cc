@@ -1299,7 +1299,9 @@ void SearchWorker::DoBackupUpdateSingleNode(
       v = n->GetQ();
       d = n->GetD();
     }
-    n->FinalizeScoreUpdate(v, d, node_to_process.multivisit);
+    n->FinalizeScoreUpdate(v / (1.0f + params_.GetShortSightedness() * depth),
+                           d, node_to_process.multivisit,
+                           params_.GetWeightedAverageAlpha());
 
     // Convert parents to terminals except the root or those already converted.
     can_convert = can_convert && p != search_->root_node_ && !p->IsTerminal();
