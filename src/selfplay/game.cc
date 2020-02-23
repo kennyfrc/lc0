@@ -108,7 +108,7 @@ lczero::Move ply_to_lc0_move(pgn::Ply& ply, const lczero::ChessBoard& board,
       }
     }
   }
-  assert(false);
+  throw Exception("Didn't understood move: " + ply.str());
   return {};
 }
 
@@ -182,6 +182,10 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
 
     // Initialize search.
     const int idx = blacks_move ? 1 : 0;
+    bool inBook = {
+        openingMove != openingMovelist.end() &&
+        (blacks_move ? openingMove->black() : openingMove->white()).valid()
+    };
     if (!options_[idx].uci_options->Get<bool>(kReuseTreeId.GetId())) {
       tree_[idx]->TrimTreeAtHead();
     }
@@ -308,11 +312,12 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
       move_ = ply_to_lc0_move(pgn_move,
                              tree_[idx]->GetPositionHistory().Last().GetBoard(),
                              blacks_move);
-      if (blacks_move) {
-        openingMove++;
-      }
     } else {
       move_ = search_->GetBestMove().first;
+    }
+
+    if (openingMove != openingMovelist.end() && blacks_move) {
+      openingMove++;
     }
 
     tree_[0]->MakeMove(move_);
