@@ -182,7 +182,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
 
     // Initialize search.
     const int idx = blacks_move ? 1 : 0;
-    bool inBook = {
+    const bool inBook = {
         openingMove != openingMovelist.end() &&
         (blacks_move ? openingMove->black() : openingMove->white()).valid()
     };
@@ -307,7 +307,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
 
     // Add best (or book) move to the tree.
     lczero::Move move_;
-    if (openingMove != openingMovelist.end()) {
+    if (inBook) {
       auto pgn_move = blacks_move ? openingMove->black() : openingMove->white();
       move_ = ply_to_lc0_move(pgn_move,
                              tree_[idx]->GetPositionHistory().Last().GetBoard(),
