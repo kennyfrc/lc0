@@ -78,7 +78,7 @@ class SelfPlayGame {
 
   // Starts the game and blocks until the game is finished.
   void Play(int white_threads, int black_threads, bool training,
-            bool enable_resign = true);
+            bool enable_resign = true, SyzygyTablebase* syzygy_tb = nullptr);
   // Aborts the game currently played, doesn't matter if it's synchronous or
   // not.
   void Abort();
