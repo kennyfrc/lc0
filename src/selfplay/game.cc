@@ -35,6 +35,81 @@
 
 namespace lczero {
 
+lczero::Move ply_to_lc0_move(pgn::Ply& ply, const lczero::ChessBoard& board,
+                             bool mirror) {
+  if (ply.isShortCastle() || ply.isLongCastle()) {
+    lczero::Move m;
+    int file_to = ply.isShortCastle() ? 6 : 2;
+    unsigned int rowIndex = 0;
+    m.SetFrom(lczero::BoardSquare(rowIndex, 4));
+    m.SetTo(lczero::BoardSquare(rowIndex, file_to));
+    m.SetCastling();
+    return m;
+  } else {
+    for (auto legal_move : board.GenerateLegalMoves()) {
+      const bool knight_move = board.our_knights().get(legal_move.from());
+      const bool bishop_move = board.bishops().get(legal_move.from());
+      const bool rook_move = board.rooks().get(legal_move.from());
+      const bool queen_move = board.queens().get(legal_move.from());
+      const bool king_move = board.our_king().get(legal_move.from());
+      const bool pawn_move = board.pawns().get(legal_move.from());
+
+      if (mirror) {
+        legal_move.Mirror();
+      }
+
+      if (legal_move.to().row() == ply.toSquare().rowIndex() &&
+          legal_move.to().col() == ply.toSquare().colIndex()) {
+        auto piece = ply.piece();
+        if (piece == pgn::Piece::Knight() && !knight_move ||
+            piece == pgn::Piece::Bishop() && !bishop_move ||
+            piece == pgn::Piece::Rook() && !rook_move ||
+            piece == pgn::Piece::Queen() && !queen_move ||
+            piece == pgn::Piece::King() && !king_move ||
+            piece == pgn::Piece::Pawn() && !pawn_move) {
+          continue;
+        }
+
+        int colIndex = ply.fromSquare().colIndex();
+        if (colIndex >= 0 && legal_move.from().col() != colIndex) {
+          continue;
+        }
+
+        int rowIndex = ply.fromSquare().rowIndex();
+        if (rowIndex >= 0 && legal_move.from().row() != rowIndex) {
+          continue;
+        }
+
+        if (ply.promotion()) {
+          switch (ply.promoted().letter()) {
+            case 'Q':
+              legal_move.SetPromotion(lczero::Move::Promotion::Queen);
+              break;
+            case 'R':
+              legal_move.SetPromotion(lczero::Move::Promotion::Rook);
+              break;
+            case 'B':
+              legal_move.SetPromotion(lczero::Move::Promotion::Bishop);
+              break;
+            case 'N':
+              legal_move.SetPromotion(lczero::Move::Promotion::Knight);
+            default:
+              assert(false);
+          }
+        }
+
+        if (mirror) {
+          legal_move.Mirror();
+        }
+
+        return legal_move;
+      }
+    }
+  }
+  assert(false);
+  return {};
+}
+
 namespace {
 const OptionId kReuseTreeId{"reuse-tree", "ReuseTree",
                             "Reuse the search tree between moves."};
@@ -89,8 +164,12 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
 }
 
 void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
-                        bool enable_resign, SyzygyTablebase* syzygy_tb) {
+                        bool enable_resign, SyzygyTablebase* syzygy_tb,
+                        pgn::Game* opening) {
   bool blacks_move = (tree_[0]->GetPlyCount() % 2) == 1;
+
+  pgn::MoveList openingMovelist = opening->moves();
+  auto openingMove = openingMovelist.begin();
 
   // Do moves while not end of the game. (And while not abort_)
   while (!abort_) {
@@ -220,7 +299,20 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
       }
       search_->ResetBestMove();
     }
-    // Add best move to the tree.
+
+    // Add best (or book) move to the tree.
+    Move move;
+    if (openingMove != openingMovelist.end()) {
+      move = ply_to_lc0_move(
+          blacks_move ? openingMove->black() : openingMove->white(),
+          tree_[idx]->GetPositionHistory().Last().GetBoard(), blacks_move);
+      if (blacks_move) {
+        openingMove++;
+      }
+    } else {
+      move = search_->GetBestMove().first;
+    }
+
     tree_[0]->MakeMove(move);
     if (tree_[0] != tree_[1]) tree_[1]->MakeMove(move);
     blacks_move = !blacks_move;

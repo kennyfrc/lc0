@@ -45,8 +45,8 @@ namespace pgn
 			char col() const; // returns 'a' for a4 square, 0 if undefined
 			char row() const; // returns '4' for a4 square, 0 if undefined
 			std::string str() const; // returns "a4" for a4 square, "" if undefined
-//			int colIndex() const; // returns 0 for a4 square
-//			int rowIndex() const; // returns 3 for a4 square
+			int colIndex() const; // returns 0 for a4 square
+			int rowIndex() const; // returns 3 for a4 square
 			Piece piece() const;
 			
 			bool valid() const; // 'a4' is a valid square. '4', 'a', '' are not.
