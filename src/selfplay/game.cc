@@ -39,11 +39,10 @@ lczero::Move ply_to_lc0_move(pgn::Ply& ply, const lczero::ChessBoard& board,
                              bool mirror) {
   if (ply.isShortCastle() || ply.isLongCastle()) {
     lczero::Move m;
-    int file_to = ply.isShortCastle() ? 6 : 2;
+    int file_to = ply.isShortCastle() ? 7 : 0;
     unsigned int rowIndex = mirror ? 7 : 0;
     m.SetFrom(lczero::BoardSquare(rowIndex, 4));
     m.SetTo(lczero::BoardSquare(rowIndex, file_to));
-    m.SetCastling();
     return m;
   } else {
     for (auto legal_move : board.GenerateLegalMoves()) {
@@ -209,7 +208,6 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
           std::move(stoppers),
           /* infinite */ false, *options_[idx].uci_options, options_[idx].cache,
           syzygy_tb);
-      // TODO: add Syzygy option for selfplay.
     }
 
     // Do search.
@@ -304,21 +302,21 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
     }
 
     // Add best (or book) move to the tree.
-    Move move;
+    lczero::Move move_;
     if (openingMove != openingMovelist.end()) {
       auto pgn_move = blacks_move ? openingMove->black() : openingMove->white();
-      move = ply_to_lc0_move(pgn_move,
+      move_ = ply_to_lc0_move(pgn_move,
                              tree_[idx]->GetPositionHistory().Last().GetBoard(),
                              blacks_move);
       if (blacks_move) {
         openingMove++;
       }
     } else {
-      move = search_->GetBestMove().first;
+      move_ = search_->GetBestMove().first;
     }
 
-    tree_[0]->MakeMove(move);
-    if (tree_[0] != tree_[1]) tree_[1]->MakeMove(move);
+    tree_[0]->MakeMove(move_);
+    if (tree_[0] != tree_[1]) tree_[1]->MakeMove(move_);
     blacks_move = !blacks_move;
   }
 }
