@@ -29,6 +29,7 @@
 
 #include <list>
 
+#include "pgnlib/PGNGameCollection.h"
 #include "selfplay/game.h"
 #include "utils/mutex.h"
 #include "utils/optionsdict.h"
@@ -68,7 +69,7 @@ class SelfPlayTournament {
 
  private:
   void Worker();
-  void PlayOneGame(int game_id);
+  void PlayOneGame(int game_id, pgn::GameCollection* pgn_openings = nullptr);
 
   Mutex mutex_;
   // Whether next game will be black for player1.
@@ -93,7 +94,8 @@ class SelfPlayTournament {
   std::shared_ptr<NNCache> cache_[2];
   const OptionsDict player_options_[2];
   SelfPlayLimits search_limits_[2];
-  std::unique_ptr<SyzygyTablebase> syzygy_tb_;
+  std::unique_ptr<SyzygyTablebase> syzygy_tb_ = nullptr;
+  std::string pgn_openings_path_ = "";
 
   CallbackUciResponder::BestMoveCallback best_move_callback_;
   CallbackUciResponder::ThinkingCallback info_callback_;

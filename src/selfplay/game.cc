@@ -40,7 +40,7 @@ lczero::Move ply_to_lc0_move(pgn::Ply& ply, const lczero::ChessBoard& board,
   if (ply.isShortCastle() || ply.isLongCastle()) {
     lczero::Move m;
     int file_to = ply.isShortCastle() ? 6 : 2;
-    unsigned int rowIndex = 0;
+    unsigned int rowIndex = mirror ? 7 : 0;
     m.SetFrom(lczero::BoardSquare(rowIndex, 4));
     m.SetTo(lczero::BoardSquare(rowIndex, file_to));
     m.SetCastling();
@@ -98,10 +98,13 @@ lczero::Move ply_to_lc0_move(pgn::Ply& ply, const lczero::ChessBoard& board,
           }
         }
 
+        // Had to comment this to get working for this use case. Not sure why it
+        // has to be commented though...
+        /*
         if (mirror) {
           legal_move.Mirror();
         }
-
+        */
         return legal_move;
       }
     }
@@ -168,7 +171,7 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
                         pgn::Game* opening) {
   bool blacks_move = (tree_[0]->GetPlyCount() % 2) == 1;
 
-  pgn::MoveList openingMovelist = opening->moves();
+  pgn::MoveList openingMovelist = opening ? opening->moves() : pgn::MoveList();
   auto openingMove = openingMovelist.begin();
 
   // Do moves while not end of the game. (And while not abort_)
@@ -303,9 +306,10 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
     // Add best (or book) move to the tree.
     Move move;
     if (openingMove != openingMovelist.end()) {
-      move = ply_to_lc0_move(
-          blacks_move ? openingMove->black() : openingMove->white(),
-          tree_[idx]->GetPositionHistory().Last().GetBoard(), blacks_move);
+      auto pgn_move = blacks_move ? openingMove->black() : openingMove->white();
+      move = ply_to_lc0_move(pgn_move,
+                             tree_[idx]->GetPositionHistory().Last().GetBoard(),
+                             blacks_move);
       if (blacks_move) {
         openingMove++;
       }
