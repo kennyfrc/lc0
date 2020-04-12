@@ -142,12 +142,13 @@ bool DepthStopper::ShouldStop(const IterationStats& stats, StoppersHints*) {
 // KldGainStopper
 ///////////////////////////
 
-KldGainStopper::KldGainStopper(float min_gain, int average_interval)
-    : min_gain_(min_gain), average_interval_(average_interval) {}
+KldGainStopper::KldGainStopper(float min_gain, int min_nodes, int average_interval)
+    : min_gain_(min_gain), min_nodes_(min_nodes), average_interval_(average_interval) {}
 
 bool KldGainStopper::ShouldStop(const IterationStats& stats, StoppersHints*) {
   Mutex::Lock lock(mutex_);
   const auto new_child_nodes = stats.total_nodes - 1.0;
+  if (new_child_nodes < min_nodes_) return false;
   if (new_child_nodes < prev_child_nodes_ + average_interval_) return false;
 
   const auto new_visits = stats.edge_n;

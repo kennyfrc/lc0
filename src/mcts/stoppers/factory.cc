@@ -77,6 +77,10 @@ const OptionId kMinimumKLDGainPerNodeId{
     "If greater than 0 search will abort unless the last "
     "KLDGainAverageInterval nodes have an average gain per node of at least "
     "this much."};
+const OptionId kMinimumKLDNodes{
+    "minimum-kld-nodes", "MinimumKLDNodes",
+    "Absolute minimum of nodes when in KLD mode"
+};
 const OptionId kKLDGainAverageIntervalId{
     "kldgain-average-interval", "KLDGainAverageInterval",
     "Used to decide how frequently to evaluate the average KLDGainPerNode to "
@@ -94,6 +98,7 @@ const OptionId kSmartPruningFactorId{
 
 void PopulateTimeManagementOptions(RunType for_what, OptionsParser* options) {
   options->Add<IntOption>(kKLDGainAverageIntervalId, 1, 10000000) = 100;
+  options->Add<IntOption>(kMinimumKLDNodes, 0, 10000000) = 10000000;
   options->Add<FloatOption>(kMinimumKLDGainPerNodeId, 0.0f, 1.0f) = 0.0f;
   options->Add<FloatOption>(kSmartPruningFactorId, 0.0f, 10.0f) =
       (for_what == RunType::kUci ? 1.33f : 0.00f);
@@ -118,9 +123,11 @@ void PopulateIntrinsicStoppers(ChainedSearchStopper* stopper,
   // KLD gain.
   const auto min_kld_gain =
       options.Get<float>(kMinimumKLDGainPerNodeId.GetId());
+  const auto min_kld_nodes =
+      options.Get<int>(kMinimumKLDNodes.GetId());
   if (min_kld_gain > 0.0f) {
     stopper->AddStopper(std::make_unique<KldGainStopper>(
-        min_kld_gain, options.Get<int>(kKLDGainAverageIntervalId.GetId())));
+        min_kld_gain, min_kld_nodes, options.Get<int>(kKLDGainAverageIntervalId.GetId())));
   }
 
   // Should be last in the chain.

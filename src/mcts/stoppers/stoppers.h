@@ -106,11 +106,12 @@ class DepthStopper : public SearchStopper {
 // Stops when search doesn't bring required KLD gain.
 class KldGainStopper : public SearchStopper {
  public:
-  KldGainStopper(float min_gain, int average_interval);
+  KldGainStopper(float min_gain, int min_nodes, int average_interval);
   bool ShouldStop(const IterationStats&, StoppersHints*) override;
 
  private:
   const double min_gain_;
+  const int min_nodes_;
   const int average_interval_;
   Mutex mutex_;
   std::vector<uint32_t> prev_visits_ GUARDED_BY(mutex_);
