@@ -110,6 +110,27 @@ class SearchParams {
   int GetMaxOutOfOrderEvals() const { return kMaxOutOfOrderEvals; }
   float GetNpsLimit() const { return kNpsLimit; }
   int GetSolidTreeThreshold() const { return kSolidTreeThreshold; }
+  std::string GetAuxEngineFile() const {
+    return options_.Get<std::string>(kAuxEngineFileId);
+  }
+  std::string GetAuxEngineOptions() const {
+    return options_.Get<std::string>(kAuxEngineOptionsId);
+  }
+  int GetAuxEngineThreshold() const {
+    return options_.Get<int>(kAuxEngineThresholdId);
+  }
+  int GetAuxEngineDepth() const {
+    return options_.Get<int>(kAuxEngineDepthId);
+  }
+  float GetAuxEngineBoost() const {
+    return options_.Get<float>(kAuxEngineBoostId);
+  }
+  int GetAuxEngineFollowPvDepth() const {
+    return options_.Get<int>(kAuxEngineFollowPvDepthId);
+  }
+  int GetAuxEngineVerbosity() const {
+    return options_.Get<int>(kAuxEngineVerbosityId);
+  }
 
   // Search parameter IDs.
   static const OptionId kMiniBatchSizeId;
@@ -162,6 +183,13 @@ class SearchParams {
   static const OptionId kMaxOutOfOrderEvalsId;
   static const OptionId kNpsLimitId;
   static const OptionId kSolidTreeThresholdId;
+  static const OptionId kAuxEngineFileId;
+  static const OptionId kAuxEngineOptionsId;
+  static const OptionId kAuxEngineThresholdId;
+  static const OptionId kAuxEngineDepthId;
+  static const OptionId kAuxEngineBoostId;
+  static const OptionId kAuxEngineFollowPvDepthId;
+  static const OptionId kAuxEngineVerbosityId;
 
  private:
   const OptionsDict& options_;

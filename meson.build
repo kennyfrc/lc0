@@ -130,6 +130,7 @@ files += [
   'src/chess/board.cc',
   'src/chess/position.cc',
   'src/chess/uciloop.cc',
+  'src/mcts/auxengine.cc',
   'src/mcts/node.cc',
   'src/mcts/params.cc',
   'src/mcts/search.cc',
@@ -173,12 +174,18 @@ deps += dependency('threads')
 
 #############################################################################
 ## Platform specific files
-############################################################################
+#############################################################################
 if host_machine.system() == 'windows'
   files += 'src/utils/filesystem.win32.cc'
 else
   files += 'src/utils/filesystem.posix.cc'
 endif
+
+#############################################################################
+## Boost library
+#############################################################################
+
+deps += [ dependency('boost', modules : ['thread', 'system' ], static : true) ]
 
 #############################################################################
 ## BACKENDS

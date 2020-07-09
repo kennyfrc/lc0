@@ -27,10 +27,12 @@
 
 #pragma once
 
+#include <boost/process.hpp>
 #include <functional>
 #include <optional>
 #include <shared_mutex>
 #include <thread>
+#include <queue>
 
 #include "chess/callbacks.h"
 #include "chess/uciloop.h"
@@ -95,6 +97,11 @@ class Search {
   // If called after GetBestMove, another call to GetBestMove will have results
   // from temperature having been applied again.
   void ResetBestMove();
+
+  //CurrentPosition current_position_;
+  std::string current_position_fen_;
+  std::vector<std::string> current_position_moves_;
+  std::string current_uci_;
 
  private:
   // Computes the best move, maybe with temperature (according to the settings).
@@ -195,6 +202,23 @@ class Search {
       GUARDED_BY(nodes_mutex_);
 
   std::unique_ptr<UciResponder> uci_responder_;
+
+  void OpenAuxEngine();
+  void AuxEngineWorker();
+  void AuxWait();
+  void DoAuxEngine(Node* n);
+  void AuxUpdateP(Node* n, std::vector<uint16_t> pv_moves, int ply);
+  static boost::process::ipstream auxengine_is_;
+  static boost::process::opstream auxengine_os_;
+  static boost::process::child auxengine_c_;
+  static bool auxengine_ready_;
+  std::queue<Node*> auxengine_queue_;
+  std::mutex auxengine_mutex_;
+  std::condition_variable auxengine_cv_;
+  std::vector<std::thread> auxengine_threads_;
+  int64_t auxengine_total_dur = 0;
+  int64_t auxengine_num_evals = 0;
+  int64_t auxengine_num_updates = 0;
 
   friend class SearchWorker;
 };
@@ -321,6 +345,7 @@ class SearchWorker {
   int number_out_of_order_ = 0;
   const SearchParams& params_;
   std::unique_ptr<Node> precached_node_;
+  void AuxMaybeEnqueueNode(Node* n);
   const bool moves_left_support_;
   IterationStats iteration_stats_;
   StoppersHints latest_time_manager_hints_;

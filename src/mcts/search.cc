@@ -28,6 +28,7 @@
 #include "mcts/search.h"
 
 #include <algorithm>
+#include <boost/process.hpp>
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -768,6 +769,7 @@ EdgeAndNode Search::GetBestRootChildWithTemperature(float temperature) const {
 
 void Search::StartThreads(size_t how_many) {
   Mutex::Lock lock(threads_mutex_);
+  OpenAuxEngine();
   // First thread is a watchdog thread.
   if (threads_.size() == 0) {
     threads_.emplace_back([this]() { WatchdogThread(); });
@@ -877,6 +879,7 @@ void Search::WatchdogThread() {
 
 void Search::FireStopInternal() {
   stop_.store(true, std::memory_order_release);
+  auxengine_cv_.notify_all();
   watchdog_cv_.notify_all();
 }
 
@@ -903,6 +906,7 @@ void Search::Wait() {
     threads_.back().join();
     threads_.pop_back();
   }
+  AuxWait();
 }
 
 void Search::CancelSharedCollisions() REQUIRES(nodes_mutex_) {
@@ -1668,6 +1672,7 @@ void SearchWorker::DoBackupUpdateSingleNode(
       search_->current_best_edge_ =
           search_->GetBestChildNoTemperature(search_->root_node_, 0);
     }
+    AuxMaybeEnqueueNode(n);
   }
   search_->total_playouts_ += node_to_process.multivisit;
   search_->cum_depth_ += node_to_process.depth * node_to_process.multivisit;

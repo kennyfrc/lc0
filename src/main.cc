@@ -38,7 +38,7 @@
 int main(int argc, const char** argv) {
   using namespace lczero;
   EscCodes::Init();
-  LOGFILE << "Lc0 started.";
+  LOGFILE << "Leelafish, based on Lc0, started.";
   CERR << EscCodes::Bold() << EscCodes::Red() << "       _";
   CERR << "|   _ | |";
   CERR << "|_ |_ |_|" << EscCodes::Reset() << " v" << GetVersionStr()
