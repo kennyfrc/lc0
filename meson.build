@@ -185,7 +185,7 @@ endif
 ## Boost library
 #############################################################################
 
-deps += [ dependency('boost', modules : ['thread', 'system' ]) ]
+deps += [ dependency('boost', modules : ['filesystem', 'thread', 'system' ]) ]
 
 #############################################################################
 ## BACKENDS
