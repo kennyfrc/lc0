@@ -329,6 +329,7 @@ bool Move::ParseMove(Move* out, const std::string& str, bool black) {
         return false;
     }
   }
+  return true;
 }
 
 uint16_t Move::as_packed_int() const {
