@@ -276,7 +276,7 @@ void Search::AuxUpdateP(Node* n, std::vector<uint16_t> pv_moves, int ply) {
     }
   }
   LOGFILE << "AuxUpdateP: Move not found. ply:" << ply;
-  throw Exception("AuxUpdateP: Move not found");
+  // throw Exception("AuxUpdateP: Move not found");
 }
 
 void Search::AuxWait() REQUIRES(threads_mutex_) {
