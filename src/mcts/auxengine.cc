@@ -30,6 +30,10 @@
 #include <sstream>
 #include <thread>
 
+#ifdef _MSC_VER
+#include <boost/process/windows.hpp>
+#endif
+
 #include "mcts/node.h"
 #include "mcts/search.h"
 #include "neural/cache.h"
@@ -65,7 +69,11 @@ void Search::AuxEngineWorker() {
     auxengine_c_ = boost::process::child(
         params_.GetAuxEngineFile(),
         boost::process::std_in<auxengine_os_, boost::process::std_out>
-            auxengine_is_);
+            auxengine_is_
+#ifdef _MSC_VER
+        ,boost::process::windows::hide
+#endif
+        );
     {
       std::istringstream iss(params_.GetAuxEngineOptions());
       std::string token;
