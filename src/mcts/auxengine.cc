@@ -255,10 +255,12 @@ void Search::AuxUpdateP(Node* n, std::vector<uint16_t> pv_moves, int ply) {
     //}
     return;
   }
+
+  float sum_of_edges = 0.0f;
   for (const auto& edge : n->Edges()) {
     if (edge.GetMove().as_packed_int() == pv_moves[ply]) {
       auto new_p = edge.GetP() + params_.GetAuxEngineBoost() / 100.0f;
-      edge.edge()->SetP(std::min(new_p, 1.0f));
+      edge.edge()->SetP(new_p);
       // Modifying P invalidates best child logic.
       n->InvalidateBestChild();
       auxengine_num_updates++;
@@ -272,11 +274,14 @@ void Search::AuxUpdateP(Node* n, std::vector<uint16_t> pv_moves, int ply) {
         AuxUpdateP(edge.node(), pv_moves, ply + 1);
       }
       n->SetAuxEngineMove(pv_moves[ply]);
-      return;
     }
+    sum_of_edges += edge.GetP();
   }
-  LOGFILE << "AuxUpdateP: Move not found. ply:" << ply;
-  // throw Exception("AuxUpdateP: Move not found");
+
+  // Re-normalize
+  for (const auto& edge : n->Edges()) {
+    edge.edge()->SetP(edge.GetP() / sum_of_edges);
+  }
 }
 
 void Search::AuxWait() REQUIRES(threads_mutex_) {
