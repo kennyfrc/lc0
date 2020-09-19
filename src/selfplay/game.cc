@@ -150,14 +150,21 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
     : options_{player1, player2},
       chess960_{player1.uci_options->Get<bool>(kUciChess960.GetId()) ||
                 player2.uci_options->Get<bool>(kUciChess960.GetId())} {
+  
+  std::string whiteNonPawns = "rnbqkbnr";
+  std::string blackNonPawns = "RNBQKBNR";
+  random_shuffle(whiteNonPawns.begin(), whiteNonPawns.end());
+  random_shuffle(blackNonPawns.begin(), blackNonPawns.end());
+  std::string startPosFen = whiteNonPawns + "/pppppppp/8/8/8/8/PPPPPPPP/" + blackNonPawns + " w - - 0 1";
+
   tree_[0] = std::make_shared<NodeTree>();
-  tree_[0]->ResetToPosition(ChessBoard::kStartposFen, {});
+  tree_[0]->ResetToPosition(startPosFen, {});
 
   if (shared_tree) {
     tree_[1] = tree_[0];
   } else {
     tree_[1] = std::make_shared<NodeTree>();
-    tree_[1]->ResetToPosition(ChessBoard::kStartposFen, {});
+    tree_[1]->ResetToPosition(startPosFen, {});
   }
   for (Move m : opening) {
     tree_[0]->MakeMove(m);
