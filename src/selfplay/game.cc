@@ -153,8 +153,30 @@ SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
   
   std::string whiteNonPawns = "rnbqkbnr";
   std::string blackNonPawns = "RNBQKBNR";
-  random_shuffle(whiteNonPawns.begin(), whiteNonPawns.end());
-  random_shuffle(blackNonPawns.begin(), blackNonPawns.end());
+
+  auto isValidStartPosition = [](const std::string& fen) {
+    bool oddBishop = false;
+    bool evenBishop = false;
+    for (std::size_t i = 0; i < fen.size(); ++i) {
+      if (toupper(fen[i]) == 'B') {
+        if (i % 2 == 0) {
+          evenBishop = true;
+        } else {
+          oddBishop = true;
+        }
+      }
+    }
+    return oddBishop && evenBishop;
+  };
+
+  do {
+    random_shuffle(whiteNonPawns.begin(), whiteNonPawns.end());
+  } while (!isValidStartPosition(whiteNonPawns));
+  
+  do {
+    random_shuffle(blackNonPawns.begin(), blackNonPawns.end());
+  } while (!isValidStartPosition(blackNonPawns));
+  
   std::string startPosFen = whiteNonPawns + "/pppppppp/8/8/8/8/PPPPPPPP/" + blackNonPawns + " w - - 0 1";
 
   tree_[0] = std::make_shared<NodeTree>();
