@@ -283,9 +283,9 @@ void SearchParams::Populate(OptionsParser* options) {
   options->Add<IntOption>(kMaxPrefetchBatchId, 0, 1024) = 32;
   options->Add<FloatOption>(kCpuctId, 0.0f, 100.0f) = 2.8f;
   options->Add<FloatOption>(kCpuctBaseId, 1.0f, 1000000000.0f) = 19652.0f;
-  options->Add<FloatOption>(kCpuctAtRootId, 0.0f, 100.0f) =  2.74f;
+  options->Add<FloatOption>(kCpuctAtRootId, 0.0f, 100.0f) =  2.8f;
   options->Add<FloatOption>(kCpuctBaseAtRootId, 1.0f, 1000000000.0f) = 18368.0f;
-  options->Add<FloatOption>(kCpuctFactorAtRootId, 0.0f, 1000.0f) = 2.815f;
+  options->Add<FloatOption>(kCpuctFactorAtRootId, 0.0f, 1000.0f) = 2.0f;
   options->Add<BoolOption>(kRootHasOwnCpuctParamsId) = true;
   options->Add<BoolOption>(kTwoFoldDrawsId) = true;
   options->Add<FloatOption>(kCpuctFactorId, 0.0f, 1000.0f) = 2.0f;
