@@ -28,6 +28,8 @@
 #include <zlib.h>
 #include <fstream>
 #include "utils/cppattributes.h"
+// #include "../../../src/PGNMoveInfo.h"
+// #include "../polyglot/src/pgn.h"
 
 #pragma once
 
@@ -51,6 +53,7 @@ struct V4TrainingData {
   float best_q;
   float root_d;
   float best_d;
+  // std::vector<PGNMoveInfo> variations;
 } PACKED_STRUCT;
 static_assert(sizeof(V4TrainingData) == 8292, "Wrong struct size");
 
